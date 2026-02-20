@@ -7,30 +7,32 @@ import org.kie.api.runtime.KieSession;
 import org.springframework.stereotype.Component;
 import pl.gogacz.planner.api.model.ResourceDTO;
 
-import lombok.RequiredArgsConstructor;
-
-@Component("droolsValidationDelegate")
-@RequiredArgsConstructor
+@Component
 public class DroolsValidationDelegate implements JavaDelegate {
 
     private final KieContainer kieContainer;
 
+    // --- RĘCZNY KONSTRUKTOR ZAMIAST LOMBOKA ---
+    public DroolsValidationDelegate(KieContainer kieContainer) {
+        this.kieContainer = kieContainer;
+    }
+
     @Override
     public void execute(DelegateExecution execution) throws Exception {
-        // 1. Pobranie danych o zasobie z procesu Camunda
         ResourceDTO resource = (ResourceDTO) execution.getVariable("resource");
 
-        // 2. Uruchomienie sesji Drools
         KieSession kieSession = kieContainer.newKieSession();
-        kieSession.insert(resource);
-        kieSession.fireAllRules();
-        kieSession.dispose();
+        try {
+            kieSession.insert(resource);
+            kieSession.fireAllRules();
+        } finally {
+            kieSession.dispose();
+        }
 
-        // 3. Aktualizacja zmiennych procesu na podstawie wyniku reguł
-        execution.setVariable("resource", resource);
-        execution.setVariable("isAvailable", resource.isAvailable());
-        execution.setVariable("resourceValue", resource.getValue());
+        boolean isApproved = resource.isAvailable(); // Teraz ta metoda na pewno istnieje!
 
-        System.out.println("LOG: Drools zakończył walidację dla: " + resource.getName());
+        execution.setVariable("droolsApproval", isApproved);
+        execution.setVariable("systemComment",
+                "Drools validation finished. Final status: " + (isApproved ? "APPROVED" : "REJECTED"));
     }
 }
