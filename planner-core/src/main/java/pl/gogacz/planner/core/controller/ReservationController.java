@@ -24,22 +24,26 @@ public class ReservationController {
 
     @PostMapping("/start")
     public String startReservationProcess(@RequestBody ResourceDTO resourceDTO) {
-
-        // POPRAWKA: Używamy setterów zamiast buildera
         Reservation reservation = new Reservation();
         reservation.setResourceId(resourceDTO.getId());
         reservation.setUserId("current-user");
         reservation.setStatus(ReservationStatus.PENDING);
-
         reservationRepository.save(reservation);
 
         Map<String, Object> processVariables = new HashMap<>();
-        processVariables.put("resource", resourceDTO);
+        processVariables.put("resourceId", resourceDTO.getId());
+        processVariables.put("resourceName", resourceDTO.getName());
+
+        if (resourceDTO.getValue() != null) {
+            processVariables.put("resourceValue", resourceDTO.getValue().doubleValue());
+        } else {
+            processVariables.put("resourceValue", 0.0);
+        }
+
         processVariables.put("reservationId", reservation.getId());
-        processVariables.put("resourceValue", resourceDTO.getValue());
 
         camundaRuntimeService.startProcessInstanceByKey("Process_Reservation", processVariables);
 
-        return "Proces rezerwacji rozpoczął się pomyślnie! ID Rezerwacji: " + reservation.getId();
+        return "Sukces! Proces ruszył. ID: " + reservation.getId();
     }
 }
