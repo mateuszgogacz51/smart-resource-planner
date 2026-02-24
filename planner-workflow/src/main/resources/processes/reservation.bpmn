@@ -4,35 +4,39 @@
     <bpmn:startEvent id="StartEvent_1" name="Wniosek o rezerwację">
       <bpmn:outgoing>Flow_1</bpmn:outgoing>
     </bpmn:startEvent>
+
     <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Activity_Validation" />
+
     <bpmn:serviceTask id="Activity_Validation" name="Walidacja reguł (Drools)" camunda:delegateExpression="${droolsValidationDelegate}">
       <bpmn:incoming>Flow_1</bpmn:incoming>
       <bpmn:outgoing>Flow_2</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Gateway_Price" name="Wartość &#62; 5000 zł?">
+
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Activity_Validation" targetRef="Activity_Approval" />
+
+    <bpmn:userTask id="Activity_Approval" name="Zarządzanie wnioskiem (Pracownik)" camunda:candidateGroups="employees">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="action" label="Decyzja" type="enum">
+            <camunda:value id="approve" name="Zatwierdź" />
+            <camunda:value id="reject" name="Odrzuć" />
+          </camunda:formField>
+          <camunda:formField id="comment" label="Komentarz pracownika" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_2</bpmn:incoming>
-      <bpmn:outgoing>Flow_Manual</bpmn:outgoing>
-      <bpmn:outgoing>Flow_Auto</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_2" sourceRef="Activity_Validation" targetRef="Gateway_Price" />
-    <bpmn:userTask id="Activity_Approval" name="Zatwierdzenie przez Managera" camunda:candidateGroups="managers">
-      <bpmn:incoming>Flow_Manual</bpmn:incoming>
       <bpmn:outgoing>Flow_3</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:sequenceFlow id="Flow_Manual" name="Tak" sourceRef="Gateway_Price" targetRef="Activity_Approval">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${resourceValue &gt; 5000}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:endEvent id="EndEvent_1" name="Rezerwacja zakończona">
-      <bpmn:incoming>Flow_3</bpmn:incoming>
-      <bpmn:incoming>Flow_Auto</bpmn:incoming>
-    </bpmn:endEvent>
+
     <bpmn:sequenceFlow id="Flow_3" sourceRef="Activity_Approval" targetRef="EndEvent_1" />
-    <bpmn:sequenceFlow id="Flow_Auto" name="Nie" sourceRef="Gateway_Price" targetRef="EndEvent_1">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${resourceValue &lt;= 5000}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+
+    <bpmn:endEvent id="EndEvent_1" name="Rezerwacja procesowana">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+    </bpmn:endEvent>
   </bpmn:process>
+
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_Reservation">
-        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>

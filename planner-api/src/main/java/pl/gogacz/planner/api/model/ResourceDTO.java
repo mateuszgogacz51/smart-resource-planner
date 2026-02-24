@@ -1,9 +1,13 @@
 package pl.gogacz.planner.api.model;
 
+import java.io.Serializable; // Import interfejsu do przesyłania danych
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class ResourceDTO {
+public class ResourceDTO implements Serializable {
+    // Statyczny identyfikator wersji (zalecany dla Serializable)
+    private static final long serialVersionUID = 1L;
+
     private Long id;
     private String name;
     private String category;
@@ -16,11 +20,9 @@ public class ResourceDTO {
     private String requesterRole;
     private boolean hasSepCertification;
 
-    // Pusty konstruktor wymagany przez Springa
     public ResourceDTO() {}
 
-    // --- RĘCZNE GETTERY I SETTERY (100% GWARANCJI KOMPILACJI) ---
-
+    // --- GETTERY I SETTERY ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -37,7 +39,7 @@ public class ResourceDTO {
     public void setRequiresHighVoltage(boolean requiresHighVoltage) { this.requiresHighVoltage = requiresHighVoltage; }
 
     public boolean isAtexCertified() { return isAtexCertified; }
-    public void setAtexCertified(boolean atexCertified) { this.isAtexCertified = atexCertified; }
+    public void setAtexCertified(boolean atexCertified) { this.isAtexCertified = isAtexCertified; }
 
     public LocalDateTime getLastTechnicalInspection() { return lastTechnicalInspection; }
     public void setLastTechnicalInspection(LocalDateTime lastTechnicalInspection) { this.lastTechnicalInspection = lastTechnicalInspection; }
