@@ -1,9 +1,14 @@
 package pl.gogacz.planner.core.model;
 
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDateTime;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class) // <--- Nasłuchiwanie zmian dla audytu
 public class Reservation {
 
     @Id
@@ -18,6 +23,14 @@ public class Reservation {
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
+
+    // --- NOWE POLA AUDYTOWE (ENTERPRISE) ---
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 
     // Pusty konstruktor (wymagany przez bazę danych)
     public Reservation() {}
@@ -40,4 +53,11 @@ public class Reservation {
 
     public ReservationStatus getStatus() { return status; }
     public void setStatus(ReservationStatus status) { this.status = status; }
+
+    // --- GETTERY I SETTERY DLA AUDYTU ---
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

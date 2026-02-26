@@ -28,10 +28,17 @@
       <bpmn:outgoing>Flow_3</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:sequenceFlow id="Flow_3" sourceRef="Activity_Approval" targetRef="EndEvent_1" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Activity_Approval" targetRef="Activity_UpdateStatus" />
+
+    <bpmn:serviceTask id="Activity_UpdateStatus" name="Aktualizacja bazy (PostgreSQL)" camunda:delegateExpression="${updateReservationStatusDelegate}">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Activity_UpdateStatus" targetRef="EndEvent_1" />
 
     <bpmn:endEvent id="EndEvent_1" name="Rezerwacja procesowana">
-      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:incoming>Flow_4</bpmn:incoming>
     </bpmn:endEvent>
   </bpmn:process>
 
