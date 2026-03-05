@@ -17,7 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import pl.gogacz.planner.core.security.JwtAuthenticationFilter;
-
+import org.springframework.boot.CommandLineRunner;
 import java.util.Collections;
 
 @Configuration
@@ -85,5 +85,14 @@ public class SecurityConfig {
                 "org.camunda.bpm.engine.rest.security.auth.impl.HttpBasicAuthenticationProvider"));
         filterRegistration.addUrlPatterns("/camunda/app/*", "/camunda/api/*");
         return filterRegistration;
+    }
+    @Bean
+    public CommandLineRunner generateHash(PasswordEncoder encoder) {
+        return args -> {
+            System.out.println("=================================================");
+            System.out.println("PRAWDZIWY HASH DLA admin123:");
+            System.out.println(encoder.encode("admin123"));
+            System.out.println("=================================================");
+        };
     }
 }
