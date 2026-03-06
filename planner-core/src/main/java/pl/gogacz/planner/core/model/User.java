@@ -73,4 +73,11 @@ public class User implements UserDetails { // <-- Implementujemy ten interfejs
     public boolean isEnabled() {
         return true;
     }
+
+    // Ręczne settery, żeby obejść ignorowanie Lomboka przez Mavena
+    public void setUsername(String username) { this.username = username; }
+    public void setPassword(String password) { this.password = password; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+    public void setRoles(List<String> roles) { this.roles = roles; }
 }

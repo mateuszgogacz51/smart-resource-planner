@@ -1,4 +1,6 @@
 package pl.gogacz.planner.core.config;
+
+import org.springframework.security.config.Customizer;
 import jakarta.servlet.http.HttpServletResponse;
 import org.camunda.bpm.webapp.impl.security.auth.ContainerBasedAuthenticationFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -18,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import pl.gogacz.planner.core.security.JwtAuthenticationFilter;
 import org.springframework.boot.CommandLineRunner;
+
 import java.util.Collections;
 
 @Configuration
@@ -36,15 +39,17 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable())
+                // Włączamy CORS (używa ustawień z WebConfig)
+                .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        // Używamy antMatchers bezpośrednio na stringach
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/camunda/**").permitAll()
+                        .requestMatchers("/error").permitAll() // <-- DODANE: zapobiega maskowaniu błędów na 401
+                        // Nowe zabezpieczenie: Tylko admin może dodawać użytkowników!
+                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
                 // WYŁĄCZAMY domyślne zachowanie "wypluwania" 403 przy błędach autoryzacji
-                // dzięki temu zobaczymy prawdziwy błąd w logach jeśli hasło będzie złe
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
@@ -86,6 +91,7 @@ public class SecurityConfig {
         filterRegistration.addUrlPatterns("/camunda/app/*", "/camunda/api/*");
         return filterRegistration;
     }
+
     @Bean
     public CommandLineRunner generateHash(PasswordEncoder encoder) {
         return args -> {
