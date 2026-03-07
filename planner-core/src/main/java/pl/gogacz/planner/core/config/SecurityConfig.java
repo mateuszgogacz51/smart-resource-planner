@@ -39,22 +39,25 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                // Włączamy CORS (używa ustawień z WebConfig)
+                // Włączamy CORS (używa ustawień z WebConfig lub domyślnych)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll() // Logowanie jest publiczne
                         .requestMatchers("/camunda/**").permitAll()
-                        .requestMatchers("/error").permitAll() // <-- DODANE: zapobiega maskowaniu błędów na 401
-                        // Nowe zabezpieczenie: Tylko admin może dodawać użytkowników!
+                        .requestMatchers("/error").permitAll()
+                        // DODANE: Dostęp do wniosków tylko dla zalogowanych użytkowników
+                        .requestMatchers("/api/applications/**").authenticated()
+                        // Tylko admin może zarządzać użytkownikami
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
-                // WYŁĄCZAMY domyślne zachowanie "wypluwania" 403 przy błędach autoryzacji
+                // Obsługa błędów autoryzacji - zwraca 401 zamiast 403
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
                         })
                 )
+                // Bezstanowa sesja (JWT)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -77,7 +80,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // W prawdziwym systemie hasła są szyfrowane BCryptem
+        // Standard Enterprise: szyfrowanie haseł BCryptem
         return new BCryptPasswordEncoder();
     }
 
@@ -96,7 +99,7 @@ public class SecurityConfig {
     public CommandLineRunner generateHash(PasswordEncoder encoder) {
         return args -> {
             System.out.println("=================================================");
-            System.out.println("PRAWDZIWY HASH DLA admin123:");
+            System.out.println("KOMUNIKAT: Prawdziwy HASH dla hasła 'admin123':");
             System.out.println(encoder.encode("admin123"));
             System.out.println("=================================================");
         };

@@ -1,1 +1,41 @@
-<p>dashboard works!</p>
+<div style="padding: 20px;">
+  
+  <div class="new-application-form" style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ddd;">
+    <h3>Nowy Wniosek o Rezerwację</h3>
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <input type="number" [(ngModel)]="newApp.resourceId" placeholder="ID Zasobu (np. 101)" style="padding: 8px;">
+      <input type="datetime-local" [(ngModel)]="newApp.startTime" style="padding: 8px;">
+      <input type="datetime-local" [(ngModel)]="newApp.endTime" style="padding: 8px;">
+    </div>
+    <button (click)="submitApplication()" [disabled]="!newApp.resourceId" style="background: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px;">
+      Wyślij Wniosek
+    </button>
+  </div>
+
+  <h1>Panel Sterowania (Enterprise Planner)</h1>
+  
+  <div *ngIf="applications.length === 0">
+    Nie masz jeszcze żadnych złożonych wniosków.
+  </div>
+
+  <table *ngIf="applications.length > 0" border="1" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    <thead>
+      <tr style="background-color: #f4f4f4;">
+        <th>ID</th>
+        <th>Zasób</th>
+        <th>Start</th>
+        <th>Koniec</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let app of applications">
+        <td>{{ app.id }}</td>
+        <td>{{ app.resourceId }}</td>
+        <td>{{ app.startTime | date:'short' }}</td>
+        <td>{{ app.endTime | date:'short' }}</td>
+        <td><strong>{{ app.status }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

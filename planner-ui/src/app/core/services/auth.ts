@@ -2,6 +2,7 @@ import { Injectable, PLATFORM_ID, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
+import { jwtDecode } from 'jwt-decode';
 
 @Injectable({
   providedIn: 'root'
@@ -30,4 +31,14 @@ export class AuthService {
     }
     return null;
   }
+  getUserRole(): string {
+  const token = this.getToken();
+  if (!token) return '';
+  const decoded: any = jwtDecode(token);
+  return decoded.role || ''; // Spring Boot przesyła rolę w polu 'role'
+}
+
+isAdmin(): boolean {
+  return this.getUserRole() === 'ROLE_ADMIN';
+}
 }
