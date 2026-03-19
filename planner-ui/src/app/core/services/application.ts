@@ -1,23 +1,32 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Application } from '../models/application.model';
-import { AuthService } from './auth';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class ApplicationService {
+  private http = inject(HttpClient);
   private apiUrl = 'http://localhost:8080/api/applications';
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
-
-  getApplications(): Observable<Application[]> {
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${this.authService.getToken()}`);
-    return this.http.get<Application[]>(this.apiUrl, { headers });
+  // Pobieranie wniosków zalogowanego użytkownika (widok USER)
+  getMyApplications(): Observable<any[]> {
+    return this.http.get<any[]>(this.apiUrl);
   }
 
-  // DODAJ TĘ METODĘ:
-  createApplication(application: Partial<Application>): Observable<Application> {
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${this.authService.getToken()}`);
-    return this.http.post<Application>(this.apiUrl, application, { headers });
+  // NOWE: Pobieranie WSZYSTKICH wniosków (widok EMPLOYEE/ADMIN)
+  getAllApplications(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/all`);
+  }
+
+  // NOWE: Zmiana statusu wniosku (Akceptacja/Odrzucenie)
+  updateStatus(id: number, status: 'ACCEPTED' | 'REJECTED'): Observable<any> {
+    // Wysyłamy pusty body {}, bo status przekazujemy w parametrze URL (?status=...)
+    return this.http.patch(`${this.apiUrl}/${id}/status?status=${status}`, {});
+  }
+
+  // Składanie nowego wniosku
+  createApplication(data: any): Observable<any> {
+    return this.http.post(this.apiUrl, data);
   }
 }
