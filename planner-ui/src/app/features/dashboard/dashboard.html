@@ -1,40 +1,50 @@
-<div style="padding: 20px;">
-  
-  <div class="new-application-form" style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #ddd;">
-    <h3>Nowy Wniosek o Rezerwację</h3>
-    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-      <input type="number" [(ngModel)]="newApp.resourceId" placeholder="ID Zasobu (np. 101)" style="padding: 8px;">
-      <input type="datetime-local" [(ngModel)]="newApp.startTime" style="padding: 8px;">
-      <input type="datetime-local" [(ngModel)]="newApp.endTime" style="padding: 8px;">
+<div style="padding: 20px; font-family: Arial, sans-serif;">
+
+  <div *ngIf="userRole === 'ROLE_USER'" class="new-application-form" style="background: #f0f7ff; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #007bff;">
+    <h3 style="margin-top: 0;">➕ Nowy Wniosek o Rezerwację</h3>
+    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+      <input type="number" [(ngModel)]="newApp.resourceId" placeholder="ID Zasobu" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <input type="datetime-local" [(ngModel)]="newApp.startTime" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      <input type="datetime-local" [(ngModel)]="newApp.endTime" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
     </div>
-    <button (click)="submitApplication()" [disabled]="!newApp.resourceId" style="background: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px;">
-      Wyślij Wniosek
+    <button (click)="submitApplication()" [disabled]="!newApp.resourceId" style="background: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold;">
+      Wyślij do akceptacji
     </button>
   </div>
 
-  <h1>Panel Sterowania (Enterprise Planner)</h1>
+  <h1>Panel Sterowania ({{ userRole === 'ROLE_USER' ? 'Użytkownik' : 'Zarządzanie' }})</h1>
   
-  <div *ngIf="applications.length === 0">
-    Nie masz jeszcze żadnych złożonych wniosków.
+  <div *ngIf="applications.length === 0" style="padding: 20px; background: #fff3cd; border-radius: 4px;">
+    Brak wniosków do wyświetlenia w tej kategorii.
   </div>
 
-  <table *ngIf="applications.length > 0" border="1" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+  <table *ngIf="applications.length > 0" style="width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
     <thead>
-      <tr style="background-color: #f4f4f4;">
-        <th>ID</th>
-        <th>Zasób</th>
-        <th>Start</th>
-        <th>Koniec</th>
-        <th>Status</th>
+      <tr style="background-color: #343a40; color: white; text-align: left;">
+        <th style="padding: 12px;">ID</th>
+        <th style="padding: 12px;">Zasób</th>
+        <th style="padding: 12px;">Start</th>
+        <th style="padding: 12px;">Koniec</th>
+        <th style="padding: 12px;">Status</th>
+        <th *ngIf="userRole !== 'ROLE_USER'" style="padding: 12px;">Akcje</th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let app of applications">
-        <td>{{ app.id }}</td>
-        <td>{{ app.resourceId }}</td>
-        <td>{{ app.startTime | date:'short' }}</td>
-        <td>{{ app.endTime | date:'short' }}</td>
-        <td><strong>{{ app.status }}</strong></td>
+      <tr *ngFor="let app of applications" style="border-bottom: 1px solid #ddd;">
+        <td style="padding: 12px;">{{ app.id }}</td>
+        <td style="padding: 12px;">#{{ app.resourceId }}</td>
+        <td style="padding: 12px;">{{ app.startTime | date:'short' }}</td>
+        <td style="padding: 12px;">{{ app.endTime | date:'short' }}</td>
+        <td style="padding: 12px;">
+          <span [style.color]="app.status === 'ACCEPTED' ? 'green' : (app.status === 'REJECTED' ? 'red' : 'orange')" style="font-weight: bold;">
+            {{ app.status }}
+          </span>
+        </td>
+        <td *ngIf="userRole !== 'ROLE_USER'" style="padding: 12px;">
+          <button *ngIf="app.status === 'PENDING'" (click)="changeStatus(app.id, 'ACCEPTED')" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">Zatwierdź</button>
+          <button *ngIf="app.status === 'PENDING'" (click)="changeStatus(app.id, 'REJECTED')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Odrzuć</button>
+          <span *ngIf="app.status !== 'PENDING'" style="color: #6c757d; font-style: italic;">Zakończone</span>
+        </td>
       </tr>
     </tbody>
   </table>
