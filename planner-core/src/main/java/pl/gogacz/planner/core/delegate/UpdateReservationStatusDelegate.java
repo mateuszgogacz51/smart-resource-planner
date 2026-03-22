@@ -24,13 +24,14 @@ public class UpdateReservationStatusDelegate implements JavaDelegate {
         // 2. Szukamy wniosku w PostgreSQL i aktualizujemy jego status
         reservationRepository.findById(reservationId).ifPresent(reservation -> {
             if (Boolean.TRUE.equals(isApproved)) {
-                reservation.setStatus(ReservationStatus.APPROVED);
+                // TUTAJ BYŁ BŁĄD: Zmieniono APPROVED na ACCEPTED
+                reservation.setStatus(ReservationStatus.ACCEPTED);
             } else {
                 reservation.setStatus(ReservationStatus.REJECTED);
             }
             reservationRepository.save(reservation);
 
-            // Log do konsoli, żebyś widział, że zadziałało
+            // Log do konsoli
             System.out.println(">>> SUKCES: Zaktualizowano w bazie status rezerwacji ID: "
                     + reservationId + " na " + reservation.getStatus() + " <<<");
         });

@@ -6,9 +6,11 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@EntityListeners(AuditingEntityListener.class) // <--- Nasłuchiwanie zmian dla audytu
+@EntityListeners(AuditingEntityListener.class)
 public class Reservation {
 
     @Id
@@ -24,7 +26,6 @@ public class Reservation {
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
 
-    // --- NOWE POLA AUDYTOWE (ENTERPRISE) ---
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -32,10 +33,12 @@ public class Reservation {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    // Pusty konstruktor (wymagany przez bazę danych)
+    // --- NOWA RELACJA: Wiele komentarzy do jednego wniosku ---
+    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
     public Reservation() {}
 
-    // --- RĘCZNE GETTERY I SETTERY ---
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -54,10 +57,13 @@ public class Reservation {
     public ReservationStatus getStatus() { return status; }
     public void setStatus(ReservationStatus status) { this.status = status; }
 
-    // --- GETTERY I SETTERY DLA AUDYTU ---
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    // --- GETTERY I SETTERY DLA KOMENTARZY ---
+    public List<Comment> getComments() { return comments; }
+    public void setComments(List<Comment> comments) { this.comments = comments; }
 }
