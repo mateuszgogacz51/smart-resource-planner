@@ -1,19 +1,56 @@
-<div class="login-container">
-  <h2>Logowanie (Enterprise Planner)</h2>
-  
-  <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
-    <div class="form-group">
-      <label>Użytkownik:</label>
-      <input type="text" [(ngModel)]="credentials.username" name="username" required>
+<div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f7f6;">
+  <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; font-family: Arial, sans-serif;">
+    
+    <h2 style="text-align: center; margin-top: 0; color: #333;">
+      {{ isRegisterMode ? 'Rejestracja (Nowy Użytkownik)' : 'Logowanie (Enterprise Planner)' }}
+    </h2>
+
+    <div *ngIf="!isRegisterMode">
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; color: #555;">Użytkownik:</label>
+        <input type="text" [(ngModel)]="credentials.username" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px; color: #555;">Hasło:</label>
+        <input type="password" [(ngModel)]="credentials.password" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      </div>
+      <button (click)="login()" style="width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px;">
+        Zaloguj się
+      </button>
+      
+      <div style="text-align: center; margin-top: 15px; font-size: 14px;">
+        Nie masz konta? <a href="javascript:void(0)" (click)="toggleMode()" style="color: #007bff; text-decoration: none; font-weight: bold;">Zarejestruj się</a>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>Hasło:</label>
-      <input type="password" [(ngModel)]="credentials.password" name="password" required>
+    <div *ngIf="isRegisterMode">
+      <div style="margin-bottom: 10px;">
+        <label style="display: block; margin-bottom: 5px; color: #555;">Imię:</label>
+        <input type="text" [(ngModel)]="registerData.firstName" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label style="display: block; margin-bottom: 5px; color: #555;">Nazwisko:</label>
+        <input type="text" [(ngModel)]="registerData.lastName" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label style="display: block; margin-bottom: 5px; color: #555;">E-mail:</label>
+        <input type="email" [(ngModel)]="registerData.email" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      </div>
+      <div style="margin-bottom: 10px;">
+        <label style="display: block; margin-bottom: 5px; color: #555;">Login:</label>
+        <input type="text" [(ngModel)]="registerData.username" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px; color: #555;">Hasło:</label>
+        <input type="password" [(ngModel)]="registerData.password" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+      </div>
+      <button (click)="register()" style="width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px;">
+        Utwórz konto
+      </button>
+      <div style="text-align: center; margin-top: 15px; font-size: 14px;">
+        Masz już konto? <a href="javascript:void(0)" (click)="toggleMode()" style="color: #007bff; text-decoration: none; font-weight: bold;">Zaloguj się</a>
+      </div>
     </div>
 
-    <button type="submit" [disabled]="!loginForm.form.valid">Zaloguj się</button>
-  </form>
-
-  <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+  </div>
 </div>

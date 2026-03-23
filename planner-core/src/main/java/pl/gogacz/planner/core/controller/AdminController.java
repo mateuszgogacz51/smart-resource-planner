@@ -1,54 +1,58 @@
 package pl.gogacz.planner.core.controller;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import pl.gogacz.planner.core.dto.UserResponse;
+import pl.gogacz.planner.core.dto.UserStatsResponse;
+import pl.gogacz.planner.core.model.Reservation;
 import pl.gogacz.planner.core.model.User;
-import pl.gogacz.planner.core.model.Role;
+import pl.gogacz.planner.core.repository.ReservationRepository;
 import pl.gogacz.planner.core.repository.UserRepository;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
-@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class AdminController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; // Usunięto RoleRepository
+    @Autowired
+    private UserRepository userRepository;
 
-    @GetMapping("/users")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users = userRepository.findAll().stream()
-                .map(user -> new UserResponse(
-                        user.getId(),
-                        user.getUsername(),
-                        user.getEmail(),
-                        // Role to już List<String>, wystarczy zamienić na Set<String>
-                        new HashSet<>(user.getRoles())
-                ))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(users);
-    }
+    @Autowired
+    private ReservationRepository reservationRepository;
 
-    @PostMapping("/register-employee")
-    public ResponseEntity<String> registerEmployee(@RequestBody User employeeRequest) {
-        if (userRepository.findByUsername(employeeRequest.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().body("Użytkownik o podanej nazwie już istnieje!");
-        }
+    // Pobieranie listy użytkowników wraz z ich statystykami
+    @GetMapping("/users/stats")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ADMIN')")
+    public List<UserStatsResponse> getUserStats() {
+        // 1. Pobieramy wszystkich użytkowników z bazy
+        List<User> users = userRepository.findAll();
 
-        // Szyfrujemy hasło przed zapisem
-        employeeRequest.setPassword(passwordEncoder.encode(employeeRequest.getPassword()));
+        // 2. Przekształcamy każdego użytkownika w obiekt statystyk (UserStatsResponse)
+        return users.stream().map(user -> {
+            // Pobieramy wnioski tylko dla tego konkretnego użytkownika
+            List<Reservation> userReservations = reservationRepository.findByUserId(user.getUsername());
 
-        // Przypisujemy rolę pracownika bezpośrednio jako String z Enuma
-        employeeRequest.setRoles(List.of(Role.ROLE_EMPLOYEE.name()));
+            UserStatsResponse stats = new UserStatsResponse();
+            stats.setUsername(user.getUsername());
+            stats.setEmail(user.getEmail());
+            String userRole = (user.getRoles() != null && !user.getRoles().isEmpty())
+                    ? user.getRoles().get(0)
+                    : "USER";
+            stats.setRole(userRole);
 
-        userRepository.save(employeeRequest);
+            // Obliczamy statystyki
+            stats.setTotalApplications(userReservations.size());
+            stats.setAcceptedApplications((int) userReservations.stream()
+                    .filter(r -> r.getStatus().name().equals("ACCEPTED")).count());
+            stats.setPendingApplications((int) userReservations.stream()
+                    .filter(r -> r.getStatus().name().equals("PENDING")).count());
+            stats.setRejectedApplications((int) userReservations.stream()
+                    .filter(r -> r.getStatus().name().equals("REJECTED")).count());
 
-        return ResponseEntity.ok("Pracownik zarejestrowany pomyślnie!");
+            return stats;
+        }).collect(Collectors.toList());
     }
 }

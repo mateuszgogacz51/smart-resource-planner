@@ -25,6 +25,11 @@ export class AuthService {
     );
   }
 
+  register(userData: any): Observable<any> {
+    // responseType: 'text', bo nasz backend zwraca zwykły tekst ("Rejestracja zakończona..."), a nie JSON
+    return this.http.post(`${this.apiUrl}/register`, userData, { responseType: 'text' });
+  }
+
   getToken(): string | null {
     if (isPlatformBrowser(this.platformId)) {
       return localStorage.getItem('jwt_token');
