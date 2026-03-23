@@ -1,6 +1,7 @@
 package pl.gogacz.planner.core.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.gogacz.planner.core.dto.UserStatsResponse;
@@ -23,16 +24,12 @@ public class AdminController {
     @Autowired
     private ReservationRepository reservationRepository;
 
-    // Pobieranie listy użytkowników wraz z ich statystykami
     @GetMapping("/users/stats")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ADMIN')")
     public List<UserStatsResponse> getUserStats() {
-        // 1. Pobieramy wszystkich użytkowników z bazy
         List<User> users = userRepository.findAll();
 
-        // 2. Przekształcamy każdego użytkownika w obiekt statystyk (UserStatsResponse)
         return users.stream().map(user -> {
-            // Pobieramy wnioski tylko dla tego konkretnego użytkownika
             List<Reservation> userReservations = reservationRepository.findByUserId(user.getUsername());
 
             UserStatsResponse stats = new UserStatsResponse();
@@ -43,7 +40,6 @@ public class AdminController {
                     : "USER";
             stats.setRole(userRole);
 
-            // Obliczamy statystyki
             stats.setTotalApplications(userReservations.size());
             stats.setAcceptedApplications((int) userReservations.stream()
                     .filter(r -> r.getStatus().name().equals("ACCEPTED")).count());
@@ -54,5 +50,22 @@ public class AdminController {
 
             return stats;
         }).collect(Collectors.toList());
+    }
+
+    // --- NOWE: Zmiana roli użytkownika ---
+    @PatchMapping("/users/{username}/role")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ADMIN')")
+    public ResponseEntity<?> changeUserRole(@PathVariable String username, @RequestParam String newRole) {
+        // Szukamy użytkownika
+        User user = userRepository.findAll().stream()
+                .filter(u -> u.getUsername().equals(username))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika: " + username));
+
+        // Nadpisujemy starą listę ról nową rolą
+        user.setRoles(List.of(newRole));
+        userRepository.save(user);
+
+        return ResponseEntity.ok().body("{\"message\": \"Rola zmieniona pomyślnie na " + newRole + "\"}");
     }
 }

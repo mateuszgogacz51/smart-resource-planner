@@ -2,8 +2,7 @@ package pl.gogacz.planner.core.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication; // Używamy Authentication zamiast Principal
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import pl.gogacz.planner.core.model.Comment;
 import pl.gogacz.planner.core.model.Reservation;
@@ -26,19 +25,13 @@ public class ReservationController {
     @Autowired
     private CommentRepository commentRepository;
 
-    // 1. DLA JANA: Pobiera tylko jego wnioski
     @GetMapping("/my")
     public List<Reservation> getMyApplications(Authentication auth) {
-        System.out.println("Użytkownik " + auth.getName() + " pobiera swoje wnioski");
         return reservationRepository.findByUserId(auth.getName());
     }
 
-    // 2. DLA ADMINA: Pobiera WSZYSTKO (Usunąłem @PreAuthorize na chwilę, żeby sprawdzić czy to blokuje)
     @GetMapping
     public List<Reservation> getAllReservations(Authentication auth) {
-        System.out.println("Konto " + auth.getName() + " z rolami " + auth.getAuthorities() + " pobiera wszystko");
-
-        // Sprawdzamy czy to Admin lub Employee
         boolean isPrivileged = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_EMPLOYEE")
                         || a.getAuthority().equals("ADMIN") || a.getAuthority().equals("EMPLOYEE"));
@@ -58,7 +51,8 @@ public class ReservationController {
         return reservationRepository.save(reservation);
     }
 
-    @PutMapping("/{id}/status")
+    // --- ZMIENIONE na PatchMapping (lepsze dla pojedynczych pól) ---
+    @PatchMapping("/{id}/status")
     public ResponseEntity<Reservation> updateStatus(
             @PathVariable Long id,
             @RequestParam String status) {
@@ -70,6 +64,17 @@ public class ReservationController {
         return ResponseEntity.ok(reservationRepository.save(reservation));
     }
 
+    // --- NOWE: Przypisanie wniosku do pracownika obsługującego ---
+    @PatchMapping("/{id}/assign")
+    public ResponseEntity<Reservation> assignApplication(@PathVariable Long id, Authentication auth) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono wniosku"));
+
+        reservation.setAssignedEmployee(auth.getName()); // Przypisuje osobę, która kliknęła przycisk
+        return ResponseEntity.ok(reservationRepository.save(reservation));
+    }
+
+    // Działające dodawanie komentarzy
     @PostMapping("/{id}/comments")
     public ResponseEntity<Reservation> addComment(
             @PathVariable Long id,
@@ -83,7 +88,7 @@ public class ReservationController {
         comment.setContent(payload.get("content"));
         comment.setAuthor(auth.getName());
         comment.setReservation(reservation);
-        comment.setCreatedAt(LocalDateTime.now());
+        // Data utworzy się sama dzięki @PrePersist w Comment.java
 
         commentRepository.save(comment);
         return ResponseEntity.ok(reservationRepository.findById(id).get());

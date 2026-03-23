@@ -26,7 +26,6 @@ export class AuthService {
   }
 
   register(userData: any): Observable<any> {
-    // responseType: 'text', bo nasz backend zwraca zwykły tekst ("Rejestracja zakończona..."), a nie JSON
     return this.http.post(`${this.apiUrl}/register`, userData, { responseType: 'text' });
   }
 
@@ -36,14 +35,38 @@ export class AuthService {
     }
     return null;
   }
-  getUserRole(): string {
-  const token = this.getToken();
-  if (!token) return '';
-  const decoded: any = jwtDecode(token);
-  return decoded.role || ''; // Spring Boot przesyła rolę w polu 'role'
-}
 
-isAdmin(): boolean {
-  return this.getUserRole() === 'ROLE_ADMIN';
-}
+  logout(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('jwt_token');
+    }
+  }
+
+  getUsername(): string {
+    const token = this.getToken();
+    if (!token) return 'Użytkownik';
+    try {
+      const decoded: any = jwtDecode(token);
+      return decoded.sub || 'Użytkownik';
+    } catch (e) {
+      return 'Użytkownik';
+    }
+  }
+
+  getUserRole(): string {
+    const token = this.getToken();
+    if (!token) return '';
+    try {
+      const decoded: any = jwtDecode(token);
+      // Obsługa różnych formatów ról ze Spring Boot
+      return decoded.role || decoded.roles || ''; 
+    } catch (e) {
+      return '';
+    }
+  }
+
+  isAdmin(): boolean {
+    const role = this.getUserRole();
+    return role === 'ROLE_ADMIN' || role === 'ADMIN';
+  }
 }

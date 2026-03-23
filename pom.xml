@@ -17,7 +17,8 @@
     </parent>
 
     <modules>
-        <module>planner-ui/planner-api</module> <module>planner-rules</module>
+        <module>planner-api</module>
+        <module>planner-rules</module>
         <module>planner-workflow</module>
         <module>planner-core</module>
     </modules>

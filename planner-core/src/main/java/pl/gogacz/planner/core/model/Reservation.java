@@ -19,6 +19,7 @@ public class Reservation {
 
     private Long resourceId;
     private String userId;
+    private String assignedEmployee;
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -66,4 +67,6 @@ public class Reservation {
     // --- GETTERY I SETTERY DLA KOMENTARZY ---
     public List<Comment> getComments() { return comments; }
     public void setComments(List<Comment> comments) { this.comments = comments; }
+    public String getAssignedEmployee() { return assignedEmployee; }
+    public void setAssignedEmployee(String assignedEmployee) { this.assignedEmployee = assignedEmployee; }
 }

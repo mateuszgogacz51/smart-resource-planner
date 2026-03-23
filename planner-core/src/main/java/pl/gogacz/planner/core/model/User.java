@@ -68,8 +68,10 @@ public class User implements UserDetails {
     public void setFirstName(String firstName) { this.firstName = firstName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
     public void setRoles(List<String> roles) { this.roles = roles; }
+    public List<String> getRoles() { return roles; }
 
     // Ręczny getter i setter dla email
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
 }

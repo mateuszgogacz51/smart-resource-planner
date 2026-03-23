@@ -1,0 +1,1 @@
+ALTER TABLE reservation ADD COLUMN assigned_employee VARCHAR(255);ad
