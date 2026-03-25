@@ -41,7 +41,7 @@
       </button>
     </div>
 
-    <h1>Lista Wniosków</h1>
+    <h1>Lista Wniosków (Suma: {{ totalElements }})</h1>
     
     <div *ngIf="applications.length === 0" style="padding: 20px; background: #fff3cd; border-radius: 4px; border: 1px solid #ffeeba;">
       Brak wniosków do wyświetlenia.
@@ -98,5 +98,58 @@
         </tr>
       </tbody>
     </table>
+
+    <div style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #ddd;">
+      
+      <button (click)="prevPage()" 
+              [disabled]="currentPage === 0"
+              style="padding: 8px 16px; cursor: pointer; background: #2c3e50; color: white; border: none; border-radius: 4px; font-weight: bold;"
+              [style.opacity]="currentPage === 0 ? '0.5' : '1'">
+        ⬅️ Poprzednia
+      </button>
+
+      <span style="font-weight: bold; color: #2c3e50;">
+        Strona {{ currentPage + 1 }} z {{ totalPages }}
+      </span>
+
+      <button (click)="nextPage()" 
+              [disabled]="currentPage >= totalPages - 1"
+              style="padding: 8px 16px; cursor: pointer; background: #2c3e50; color: white; border: none; border-radius: 4px; font-weight: bold;"
+              [style.opacity]="currentPage >= totalPages - 1 ? '0.5' : '1'">
+        Następna ➡️
+      </button>
+
+    </div>
   </div>
+
+  <div *ngIf="activeTab === 'employees'">
+    <h2 style="color: #2c3e50;">Uprawnienia i Wydajność Użytkowników</h2>
+    <table style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+      <thead>
+        <tr style="background-color: #34495e; color: white; text-align: left;">
+          <th style="padding: 15px;">Użytkownik</th>
+          <th style="padding: 15px;">Rola</th>
+          <th style="padding: 15px; text-align: center;">Wnioski</th>
+          <th style="padding: 15px; text-align: center;">Akcje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let stat of employeeStats" style="border-bottom: 1px solid #eee;">
+          <td style="padding: 15px;">👤 {{ stat.username }}</td>
+          <td style="padding: 15px;">
+            <span style="padding: 4px 10px; border-radius: 12px; color: white; font-size: 0.75em; background: #3498db;">
+              {{ stat.role }}
+            </span>
+          </td>
+          <td style="padding: 15px; text-align: center;">{{ stat.totalApplications }}</td>
+          <td style="padding: 15px; text-align: center;">
+            <button *ngIf="stat.role !== 'ROLE_ADMIN' && stat.role !== 'ADMIN'" (click)="changeRole(stat.username, 'ROLE_ADMIN')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;">Admin</button>
+            <button *ngIf="stat.role !== 'ROLE_EMPLOYEE' && stat.role !== 'EMPLOYEE'" (click)="changeRole(stat.username, 'ROLE_EMPLOYEE')" style="background: #f39c12; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Pracownik</button>
+            <button *ngIf="stat.role !== 'ROLE_USER' && stat.role !== 'USER'" (click)="changeRole(stat.username, 'ROLE_USER')" style="background: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Użytkownik</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
 </div>

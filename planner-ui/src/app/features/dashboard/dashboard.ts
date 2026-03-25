@@ -16,10 +16,19 @@ export class DashboardComponent implements OnInit {
   private router = inject(Router);
   public authService = inject(AuthService); 
 
+  // --- DANE I STATUSY ---
   applications: any[] = [];
   userRole: string = '';
   activeTab: 'applications' | 'employees' = 'applications';
   employeeStats: any[] = [];
+
+  // --- PAGINACJA ---
+  currentPage: number = 0;
+  totalPages: number = 0;
+  totalElements: number = 0;
+  pageSize: number = 10;
+
+  // --- FORMULARZE I KOMENTARZE ---
   newApp: any = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
   newComments: { [key: number]: string } = {};
 
@@ -28,60 +37,122 @@ export class DashboardComponent implements OnInit {
     this.loadData();
   }
 
+  /**
+   * Główna funkcja ładująca dane z uwzględnieniem paginacji
+   */
   loadData() {
-    // Pobieramy aktualną rolę bezpośrednio z serwisu przy każdym wywołaniu
-    const currentRole = this.authService.getUserRole();
-    const isAdminUser = currentRole === 'ROLE_ADMIN' || currentRole === 'ADMIN' || 
-                        currentRole === 'ROLE_EMPLOYEE' || currentRole === 'EMPLOYEE';
+    const role = this.authService.getUserRole();
+    const isPrivileged = role === 'ROLE_ADMIN' || role === 'ADMIN' || 
+                         role === 'ROLE_EMPLOYEE' || role === 'EMPLOYEE';
 
-    const request = isAdminUser
-      ? this.appService.getAllApplications() 
-      : this.appService.getMyApplications();
+    const request = isPrivileged
+      ? this.appService.getAllApplications(this.currentPage, this.pageSize)
+      : this.appService.getMyApplications(this.currentPage, this.pageSize);
 
     request.subscribe({
-      next: (data) => {
-        this.applications = data;
-        console.log('Dane załadowane:', data);
+      next: (response) => {
+        // Spring Boot Page obiekt zawiera dane w polu 'content'
+        this.applications = response.content; 
+        this.totalPages = response.totalPages;
+        this.totalElements = response.totalElements;
       },
-      error: (err) => console.error('Błąd pobierania danych:', err)
+      error: (err) => this.handleError(err)
     });
   }
 
-  logout() {
-    this.authService.logout(); 
-    this.router.navigate(['/login']); 
+  /**
+   * Obsługa błędów z GlobalExceptionHandler (Backend)
+   */
+  private handleError(err: any) {
+    const errorTitle = err.error?.message || "Błąd systemu";
+    const errorDetail = err.error?.details || "Nie udało się połączyć z serwerem.";
+    alert(`❌ ${errorTitle}\nSzczegóły: ${errorDetail}`);
+  }
+
+  // --- NAWIGACJA PAGINACJI ---
+  nextPage() {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+      this.loadData();
+    }
+  }
+
+  prevPage() {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.loadData();
+    }
+  }
+
+  // --- OPERACJE NA WNIOSKACH ---
+  submitApplication() {
+    this.appService.createApplication(this.newApp).subscribe({
+      next: () => {
+        alert('✅ Wniosek wysłany pomyślnie.');
+        this.currentPage = 0; // Powrót na pierwszą stronę, by zobaczyć nowy wpis
+        this.loadData();
+        this.newApp = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' }; 
+      },
+      error: (err) => this.handleError(err)
+    });
   }
 
   changeStatus(id: number, newStatus: 'ACCEPTED' | 'REJECTED') {
     this.appService.updateStatus(id, newStatus).subscribe({
       next: () => { 
-        alert(`Status zmieniony na: ${newStatus}`); 
+        alert(`✅ Status zmieniony na: ${newStatus}`); 
         this.loadData(); 
       },
-      error: (err) => alert('Błąd: ' + err.message)
+      error: (err) => this.handleError(err)
     });
   }
 
-  submitApplication() {
-    this.appService.createApplication(this.newApp).subscribe({
-      next: () => {
-        alert('Wysłano wniosek!');
-        this.loadData();
-        this.newApp = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' }; 
+  assignToMe(id: number) {
+    this.appService.assignApplication(id).subscribe({
+      next: () => { 
+        alert('👷 Wniosek przypisany do Twojej obsługi.'); 
+        this.loadData(); 
       },
-      error: (err) => alert('Błąd wysyłania: ' + err.message)
+      error: (err) => this.handleError(err)
     });
   }
 
+  addComment(id: number) {
+    const content = this.newComments[id];
+    if (!content || content.trim() === '') return;
+
+    this.appService.addComment(id, content).subscribe({
+      next: () => { 
+        this.newComments[id] = ''; 
+        this.loadData(); 
+      },
+      error: (err) => this.handleError(err)
+    });
+  }
+
+  // --- ZAKŁADKI I ADMIN ---
   switchTab(tab: 'applications' | 'employees') {
     this.activeTab = tab;
     if (tab === 'employees') {
       this.appService.getEmployeeStats().subscribe({
         next: (data) => this.employeeStats = data,
-        error: (err) => console.error('Błąd statystyk:', err)
+        error: (err) => this.handleError(err)
       });
     } else {
+      this.currentPage = 0; // Reset strony przy przełączaniu na wnioski
       this.loadData();
+    }
+  }
+
+  changeRole(username: string, newRole: string) {
+    if (confirm(`Zmienić rolę użytkownika ${username} na ${newRole}?`)) {
+      this.appService.changeUserRole(username, newRole).subscribe({
+        next: () => { 
+          alert('✅ Rola zaktualizowana.');
+          this.switchTab('employees'); 
+        },
+        error: (err) => this.handleError(err)
+      });
     }
   }
 
@@ -89,33 +160,8 @@ export class DashboardComponent implements OnInit {
     return this.authService.isAdmin();
   }
 
-  assignToMe(id: number) {
-    this.appService.assignApplication(id).subscribe({
-      next: () => { 
-        alert('Przypisano!'); 
-        this.loadData(); 
-      },
-      error: (err) => alert('Błąd: ' + err.message)
-    });
-  }
-
-  addComment(id: number) {
-    if (!this.newComments[id]?.trim()) return;
-    this.appService.addComment(id, this.newComments[id]).subscribe({
-      next: () => { 
-        this.newComments[id] = ''; 
-        this.loadData(); 
-      },
-      error: (err) => alert('Błąd: ' + err.message)
-    });
-  }
-
-  changeRole(username: string, newRole: string) {
-    if (confirm(`Zmienić rolę dla ${username}?`)) {
-      this.appService.changeUserRole(username, newRole).subscribe({
-        next: () => { this.switchTab('employees'); },
-        error: (err) => alert('Błąd: ' + err.message)
-      });
-    }
+  logout() {
+    this.authService.logout(); 
+    this.router.navigate(['/login']); 
   }
 }
