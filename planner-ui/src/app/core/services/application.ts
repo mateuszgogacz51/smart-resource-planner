@@ -48,4 +48,8 @@ export class ApplicationService {
   changeUserRole(username: string, role: string): Observable<any> {
     return this.http.post(`http://localhost:8080/api/admin/users/${username}/role?role=${role}`, {});
   }
+  // --- NOWE: Pobieranie dostępnego sprzętu ---
+  getAvailableResources(): Observable<any[]> {
+    return this.http.get<any[]>('http://localhost:8080/api/resources/available');
+  }
 }

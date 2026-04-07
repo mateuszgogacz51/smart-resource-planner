@@ -1,6 +1,7 @@
 package pl.gogacz.planner.core.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable; // DODANO
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,11 +31,16 @@ public class AdminController {
         List<User> users = userRepository.findAll();
 
         return users.stream().map(user -> {
-            List<Reservation> userReservations = reservationRepository.findByUserId(user.getUsername());
+            // POPRAWKA: Przekazujemy Pageable.unpaged() i wyciągamy listę przez .getContent()
+            // Dzięki temu pobieramy WSZYSTKIE rekordy do obliczenia statystyk
+            List<Reservation> userReservations = reservationRepository
+                    .findByUserId(user.getUsername(), Pageable.unpaged())
+                    .getContent();
 
             UserStatsResponse stats = new UserStatsResponse();
             stats.setUsername(user.getUsername());
             stats.setEmail(user.getEmail());
+
             String userRole = (user.getRoles() != null && !user.getRoles().isEmpty())
                     ? user.getRoles().get(0)
                     : "USER";
@@ -52,17 +58,14 @@ public class AdminController {
         }).collect(Collectors.toList());
     }
 
-    // --- NOWE: Zmiana roli użytkownika ---
     @PatchMapping("/users/{username}/role")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ADMIN')")
     public ResponseEntity<?> changeUserRole(@PathVariable String username, @RequestParam String newRole) {
-        // Szukamy użytkownika
         User user = userRepository.findAll().stream()
                 .filter(u -> u.getUsername().equals(username))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika: " + username));
 
-        // Nadpisujemy starą listę ról nową rolą
         user.setRoles(List.of(newRole));
         userRepository.save(user);
 

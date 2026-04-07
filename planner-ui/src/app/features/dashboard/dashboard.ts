@@ -21,6 +21,9 @@ export class DashboardComponent implements OnInit {
   userRole: string = '';
   activeTab: 'applications' | 'employees' = 'applications';
   employeeStats: any[] = [];
+  
+  // --- NOWE: SŁOWNIK ZASOBÓW ---
+  availableResources: any[] = [];
 
   // --- PAGINACJA ---
   currentPage: number = 0;
@@ -35,6 +38,19 @@ export class DashboardComponent implements OnInit {
   ngOnInit() {
     this.userRole = this.authService.getUserRole();
     this.loadData();
+    this.loadResources();
+  }
+
+  /**
+   * Pobiera listę dostępnego sprzętu do dropdowna
+   */
+  loadResources() {
+    if (this.userRole === 'ROLE_USER' || this.userRole === 'USER') {
+      this.appService.getAvailableResources().subscribe({
+        next: (data) => this.availableResources = data,
+        error: (err) => console.error('Błąd pobierania zasobów:', err)
+      });
+    }
   }
 
   /**
@@ -51,7 +67,6 @@ export class DashboardComponent implements OnInit {
 
     request.subscribe({
       next: (response) => {
-        // Spring Boot Page obiekt zawiera dane w polu 'content'
         this.applications = response.content; 
         this.totalPages = response.totalPages;
         this.totalElements = response.totalElements;
@@ -60,16 +75,12 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /**
-   * Obsługa błędów z GlobalExceptionHandler (Backend)
-   */
   private handleError(err: any) {
     const errorTitle = err.error?.message || "Błąd systemu";
     const errorDetail = err.error?.details || "Nie udało się połączyć z serwerem.";
     alert(`❌ ${errorTitle}\nSzczegóły: ${errorDetail}`);
   }
 
-  // --- NAWIGACJA PAGINACJI ---
   nextPage() {
     if (this.currentPage < this.totalPages - 1) {
       this.currentPage++;
@@ -84,12 +95,15 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // --- OPERACJE NA WNIOSKACH ---
   submitApplication() {
+    if (!this.newApp.resourceId) {
+      alert('Proszę wybrać sprzęt z listy!');
+      return;
+    }
     this.appService.createApplication(this.newApp).subscribe({
       next: () => {
         alert('✅ Wniosek wysłany pomyślnie.');
-        this.currentPage = 0; // Powrót na pierwszą stronę, by zobaczyć nowy wpis
+        this.currentPage = 0; 
         this.loadData();
         this.newApp = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' }; 
       },
@@ -130,7 +144,6 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // --- ZAKŁADKI I ADMIN ---
   switchTab(tab: 'applications' | 'employees') {
     this.activeTab = tab;
     if (tab === 'employees') {
@@ -139,7 +152,7 @@ export class DashboardComponent implements OnInit {
         error: (err) => this.handleError(err)
       });
     } else {
-      this.currentPage = 0; // Reset strony przy przełączaniu na wnioski
+      this.currentPage = 0; 
       this.loadData();
     }
   }
