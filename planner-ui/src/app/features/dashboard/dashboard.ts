@@ -16,50 +16,35 @@ export class DashboardComponent implements OnInit {
   private router = inject(Router);
   public authService = inject(AuthService); 
 
-  // --- DANE I STATUSY ---
   applications: any[] = [];
   userRole: string = '';
   activeTab: 'applications' | 'employees' = 'applications';
   employeeStats: any[] = [];
-  
-  // --- NOWE: SŁOWNIK ZASOBÓW ---
   availableResources: any[] = [];
 
-  // --- PAGINACJA ---
   currentPage: number = 0;
   totalPages: number = 0;
   totalElements: number = 0;
   pageSize: number = 10;
 
-  // --- FORMULARZE I KOMENTARZE ---
   newApp: any = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
   newComments: { [key: number]: string } = {};
 
   ngOnInit() {
-    this.userRole = this.authService.getUserRole();
+    this.userRole = (this.authService.getUserRole() || '').toUpperCase();
     this.loadData();
     this.loadResources();
   }
 
-  /**
-   * Pobiera listę dostępnego sprzętu do dropdowna
-   */
   loadResources() {
-    if (this.userRole === 'ROLE_USER' || this.userRole === 'USER') {
-      this.appService.getAvailableResources().subscribe({
-        next: (data) => this.availableResources = data,
-        error: (err) => console.error('Błąd pobierania zasobów:', err)
-      });
-    }
+    this.appService.getAvailableResources().subscribe({
+      next: (data) => this.availableResources = data
+    });
   }
 
-  /**
-   * Główna funkcja ładująca dane z uwzględnieniem paginacji
-   */
   loadData() {
-    const role = this.authService.getUserRole();
-    const isPrivileged = role === 'ROLE_ADMIN' || role === 'ADMIN' || 
-                         role === 'ROLE_EMPLOYEE' || role === 'EMPLOYEE';
+    const role = (this.authService.getUserRole() || '').toUpperCase();
+    const isPrivileged = role.includes('ADMIN') || role.includes('EMPLOYEE');
 
     const request = isPrivileged
       ? this.appService.getAllApplications(this.currentPage, this.pageSize)
@@ -71,110 +56,69 @@ export class DashboardComponent implements OnInit {
         this.totalPages = response.totalPages;
         this.totalElements = response.totalElements;
       },
-      error: (err) => this.handleError(err)
+      error: (err: any) => this.handleError(err)
     });
-  }
-
-  private handleError(err: any) {
-    const errorTitle = err.error?.message || "Błąd systemu";
-    const errorDetail = err.error?.details || "Nie udało się połączyć z serwerem.";
-    alert(`❌ ${errorTitle}\nSzczegóły: ${errorDetail}`);
-  }
-
-  nextPage() {
-    if (this.currentPage < this.totalPages - 1) {
-      this.currentPage++;
-      this.loadData();
-    }
-  }
-
-  prevPage() {
-    if (this.currentPage > 0) {
-      this.currentPage--;
-      this.loadData();
-    }
   }
 
   submitApplication() {
-    if (!this.newApp.resourceId) {
-      alert('Proszę wybrać sprzęt z listy!');
-      return;
-    }
     this.appService.createApplication(this.newApp).subscribe({
       next: () => {
-        alert('✅ Wniosek wysłany pomyślnie.');
-        this.currentPage = 0; 
+        alert('✅ Wysłano! SYSTEM-BOT zweryfikuje wniosek.');
         this.loadData();
         this.newApp = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' }; 
       },
-      error: (err) => this.handleError(err)
+      error: (err: any) => this.handleError(err)
     });
   }
 
-  changeStatus(id: number, newStatus: 'ACCEPTED' | 'REJECTED') {
-    this.appService.updateStatus(id, newStatus).subscribe({
-      next: () => { 
-        alert(`✅ Status zmieniony na: ${newStatus}`); 
-        this.loadData(); 
+  showHistory(id: number) {
+    this.appService.getHistory(id).subscribe({
+      next: (logs: any[]) => {
+        if (!logs || logs.length === 0) { alert("Brak historii."); return; }
+        const historyStr = logs.map(l => 
+          `🕒 ${new Date(l.timestamp).toLocaleString()}: ${l.oldStatus} -> ${l.newStatus} (${l.changedBy})`
+        ).join('\n');
+        alert(`Historia wniosku #${id}:\n\n${historyStr}`);
+      }
+    });
+  }
+
+  changeStatus(id: number, newStatus: string) {
+    this.appService.updateStatus(id, newStatus.toUpperCase()).subscribe({
+      next: () => {
+        alert('✅ Zmieniono status!');
+        this.loadData();
       },
-      error: (err) => this.handleError(err)
+      error: (err: any) => this.handleError(err)
     });
   }
 
   assignToMe(id: number) {
-    this.appService.assignApplication(id).subscribe({
-      next: () => { 
-        alert('👷 Wniosek przypisany do Twojej obsługi.'); 
-        this.loadData(); 
-      },
-      error: (err) => this.handleError(err)
-    });
+    this.appService.assignApplication(id).subscribe(() => this.loadData());
   }
 
   addComment(id: number) {
     const content = this.newComments[id];
-    if (!content || content.trim() === '') return;
-
-    this.appService.addComment(id, content).subscribe({
-      next: () => { 
-        this.newComments[id] = ''; 
-        this.loadData(); 
-      },
-      error: (err) => this.handleError(err)
+    if (!content) return;
+    this.appService.addComment(id, content).subscribe(() => {
+      this.newComments[id] = '';
+      this.loadData();
     });
   }
 
   switchTab(tab: 'applications' | 'employees') {
     this.activeTab = tab;
-    if (tab === 'employees') {
-      this.appService.getEmployeeStats().subscribe({
-        next: (data) => this.employeeStats = data,
-        error: (err) => this.handleError(err)
-      });
-    } else {
-      this.currentPage = 0; 
-      this.loadData();
-    }
+    if (tab === 'employees') this.loadEmployeeStats();
+    else this.loadData();
   }
 
-  changeRole(username: string, newRole: string) {
-    if (confirm(`Zmienić rolę użytkownika ${username} na ${newRole}?`)) {
-      this.appService.changeUserRole(username, newRole).subscribe({
-        next: () => { 
-          alert('✅ Rola zaktualizowana.');
-          this.switchTab('employees'); 
-        },
-        error: (err) => this.handleError(err)
-      });
-    }
+  loadEmployeeStats() {
+    this.appService.getEmployeeStats().subscribe(data => this.employeeStats = data);
   }
 
-  isAdmin(): boolean {
-    return this.authService.isAdmin();
-  }
-
-  logout() {
-    this.authService.logout(); 
-    this.router.navigate(['/login']); 
-  }
+  nextPage() { if (this.currentPage < this.totalPages - 1) { this.currentPage++; this.loadData(); } }
+  prevPage() { if (this.currentPage > 0) { this.currentPage--; this.loadData(); } }
+  private handleError(err: any) { alert("❌ Błąd: " + (err.error?.message || "Brak połączenia")); }
+  isAdmin(): boolean { return this.authService.isAdmin(); }
+  logout() { this.authService.logout(); this.router.navigate(['/login']); }
 }

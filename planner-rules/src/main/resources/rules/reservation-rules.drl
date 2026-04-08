@@ -1,0 +1,19 @@
+package pl.gogacz.planner.rules;
+
+import pl.gogacz.planner.dto.ReservationRuleContext;
+
+rule "Zablokuj rezerwacje powyzej 12 godzin"
+when
+    $ctx : ReservationRuleContext( durationInHours > 12 )
+then
+    $ctx.setValid(false);
+    $ctx.setRejectionReason("Maksymalny czas rezerwacji to 12 godzin. Skontaktuj się z administratorem.");
+end
+
+rule "Zablokuj rezerwacje nocne"
+when
+    $ctx : ReservationRuleContext( startTime.getHour() >= 22 || startTime.getHour() < 6 )
+then
+    $ctx.setValid(false);
+    $ctx.setRejectionReason("Nie można rezerwować sprzętu w godzinach nocnych (22:00 - 06:00).");
+end
