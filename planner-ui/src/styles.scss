@@ -1,1 +1,88 @@
-/* You can add global styles to this file, and also import other style files */
+/* KULODPORNY RESET DARK MODE */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  min-height: 100vh; 
+  background-color: #1E1E1E !important; /* Główne mroczne tło */
+  color: #E0E0E0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Zabezpieczenie dla kontenera Angulara */
+app-root {
+  display: block;
+  min-height: 100vh;
+  background-color: #1E1E1E !important;
+}
+
+/* Globalne style dla inputów (żeby nie były białe) */
+input, select {
+  background-color: #252525 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #333 !important;
+  border-radius: 6px;
+  outline: none;
+  
+  &:focus {
+    border-color: #99FFCC !important;
+    box-shadow: 0 0 8px rgba(153, 255, 204, 0.2);
+  }
+}
+
+/* Nowoczesny morski scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1E1E1E; 
+}
+::-webkit-scrollbar-thumb {
+  background: #2D4F4F; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #99FFCC; 
+}
+
+/* Konfiguracja wydruku raportów */
+@media print {
+  .no-print, button, input, select { display: none !important; }
+  body { background: white !important; color: black !important; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #ccc; padding: 10px; color: black !important; }
+}
+
+/* PŁYNNE PRZEJŚCIA DLA CAŁEJ APLIKACJI */
+button, input, select, a, .tab, tr {
+  transition: all 0.2s ease-in-out !important;
+}
+
+/* EFEKT HOVER DLA PRZYCISKÓW (delikatne powiększenie) */
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(153, 255, 204, 0.2) !important;
+}
+
+/* KLIKNIĘCIE PRZYCISKU */
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* EFEKT DLA WIERSZY TABELI */
+tbody tr:hover {
+  background-color: #2a2a2a !important;
+  cursor: default;
+}
+
+/* ANIMACJA WEJŚCIA DLA KART (Fade In) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-card, table, .stats-container, .form-container {
+  animation: fadeIn 0.4s ease-out;
+}

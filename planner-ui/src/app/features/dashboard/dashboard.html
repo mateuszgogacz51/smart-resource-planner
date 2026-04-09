@@ -1,119 +1,119 @@
-<div style="padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; min-height: 100vh;">
+<div style="padding: 20px; background-color: #1E1E1E; min-height: 100vh; color: #E0E0E0; display: flex; flex-direction: column;">
 
-  <div style="display: flex; justify-content: space-between; background: #2c3e50; padding: 15px 25px; color: white; border-radius: 8px; margin-bottom: 20px; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <span style="font-weight: bold; font-size: 1.3em;">🚀 Smart Resource Planner</span>
-    <div style="display: flex; align-items: center; gap: 15px;">
-      <span>👤 <strong>{{ authService.getUsername() }}</strong> <small style="opacity: 0.8;">({{ authService.getUserRole() }})</small></span>
-      <button (click)="logout()" style="background: #e74c3c; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Wyloguj</button>
+  <div class="no-print" style="display: flex; justify-content: space-between; background: #252525; padding: 15px 25px; border-radius: 8px; margin-bottom: 25px; align-items: center; border-bottom: 2px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+    <span style="font-weight: bold; font-size: 1.4em; color: #FFFFFF;"><span style="color: #99FFCC;">🚀 Smart</span> Resource Planner</span>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <span style="color: #A0A0A0; font-size: 0.95em;">Pracownik: <strong style="color: #FFFFFF;">{{ authService.getUsername() }}</strong></span>
+      <button (click)="logout()" style="background: #FF6B6B; color: #121212; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.8em;">Wyloguj</button>
     </div>
   </div>
 
-  <div *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" style="margin-bottom: 20px; display: flex; gap: 10px;">
-    <button (click)="switchTab('applications')" [style.background]="activeTab === 'applications' ? '#3498db' : '#bdc3c7'" style="color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s;">📋 Wnioski</button>
-    <button *ngIf="authService.getUserRole().includes('ADMIN')" (click)="switchTab('employees')" [style.background]="activeTab === 'employees' ? '#3498db' : '#bdc3c7'" style="color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s;">👥 Statystyki</button>
+  <div class="no-print" *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" style="margin-bottom: 25px; display: flex; gap: 15px;">
+    <button (click)="switchTab('applications')" 
+            [style.background]="activeTab === 'applications' ? '#2D4F4F' : '#252525'" 
+            [style.color]="activeTab === 'applications' ? '#99FFCC' : '#888'"
+            [style.border]="activeTab === 'applications' ? '1px solid #99FFCC' : '1px solid #333'"
+            style="padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; position: relative; transition: 0.3s;">
+      📋 ZARZĄDZANIE WNIOSKAMI
+      <span *ngIf="pendingCount > 0" 
+            style="position: absolute; top: -8px; right: -8px; background: #FF6B6B; color: #121212; font-size: 0.75em; padding: 2px 8px; border-radius: 12px; font-weight: 900; box-shadow: 0 0 10px rgba(255,107,107,0.4);">
+        {{ pendingCount }}
+      </span>
+    </button>
+    <button *ngIf="authService.getUserRole().includes('ADMIN')" (click)="switchTab('employees')" 
+            [style.background]="activeTab === 'employees' ? '#2D4F4F' : '#252525'" 
+            [style.color]="activeTab === 'employees' ? '#99FFCC' : '#888'"
+            [style.border]="activeTab === 'employees' ? '1px solid #99FFCC' : '1px solid #333'"
+            style="padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">
+      👥 STATYSTYKI WYDAJNOŚCI
+    </button>
   </div>
 
   <div *ngIf="activeTab === 'applications'">
     
-    <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 5px solid #2ecc71;">
-      <h3 style="margin-top: 0; color: #2c3e50;">➕ Nowy Wniosek</h3>
+    <div class="no-print" style="background: #252525; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+      <h3 style="margin-top: 0; color: #FFFFFF;">➕ Nowy Wniosek o Sprzęt</h3>
       <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
         <div style="display: flex; flex-direction: column; gap: 5px;">
-          <label style="font-size: 0.8em; color: #7f8c8d; font-weight: bold;">SPRZĘT:</label>
-          <select [(ngModel)]="newApp.resourceId" style="padding: 10px; border-radius: 6px; border: 1px solid #ddd; min-width: 200px;">
-            <option [ngValue]="null">Wybierz z listy...</option>
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">WYBIERZ ZASÓB:</label>
+          <select [(ngModel)]="newApp.resourceId" style="padding: 10px; min-width: 200px;">
+            <option [ngValue]="null">-- Wybierz urządzenie --</option>
             <option *ngFor="let res of availableResources" [value]="res.id">{{ res.name }}</option>
           </select>
         </div>
         <div style="display: flex; flex-direction: column; gap: 5px;">
-          <label style="font-size: 0.8em; color: #7f8c8d; font-weight: bold;">OD:</label>
-          <input type="datetime-local" [(ngModel)]="newApp.startTime" style="padding: 10px; border-radius: 6px; border: 1px solid #ddd;">
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">DATA STARTU:</label>
+          <input type="datetime-local" [(ngModel)]="newApp.startTime" style="padding: 10px;">
         </div>
         <div style="display: flex; flex-direction: column; gap: 5px;">
-          <label style="font-size: 0.8em; color: #7f8c8d; font-weight: bold;">DO:</label>
-          <input type="datetime-local" [(ngModel)]="newApp.endTime" style="padding: 10px; border-radius: 6px; border: 1px solid #ddd;">
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">DATA KOŃCA:</label>
+          <input type="datetime-local" [(ngModel)]="newApp.endTime" style="padding: 10px;">
         </div>
-        <button (click)="submitApplication()" 
-                [disabled]="!newApp.resourceId || !newApp.startTime || !newApp.endTime"
-                [style.opacity]="(!newApp.resourceId || !newApp.startTime || !newApp.endTime) ? 0.5 : 1"
-                style="background: #2ecc71; color: white; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em;">
-          Wyślij
-        </button>
+        <button (click)="submitApplication()" [disabled]="!newApp.resourceId || !newApp.startTime || !newApp.endTime"
+                style="background: #99FFCC; color: #121212; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-weight: bold;">WYŚLIJ WNIOSEK</button>
       </div>
     </div>
 
-    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-      <thead style="background: #ecf0f1; color: #7f8c8d; text-transform: uppercase; font-size: 0.85em;">
+    <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="display: flex; gap: 10px;">
+        <button (click)="setFilter('ALL')" [style.border-color]="statusFilter === 'ALL' ? '#99FFCC' : '#444'" style="background: #252525; color: white; border: 1px solid; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8em;">WSZYSTKIE</button>
+        <button (click)="setFilter('PENDING')" [style.border-color]="statusFilter === 'PENDING' ? '#FDCB6E' : '#444'" style="background: #252525; color: white; border: 1px solid; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8em;">OCZEKUJĄCE</button>
+        <button (click)="setFilter('ACCEPTED')" [style.border-color]="statusFilter === 'ACCEPTED' ? '#99FFCC' : '#444'" style="background: #252525; color: white; border: 1px solid; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8em;">ZATWIERDZONE</button>
+      </div>
+      <div style="display: flex; gap: 15px; align-items: center;">
+        <input type="text" placeholder="Szukaj..." (input)="onSearchInput($event)" style="padding: 10px 15px; border-radius: 20px; width: 250px;">
+        <button (click)="printReport()" style="background: transparent; color: #99FFCC; border: 1px solid #99FFCC; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">📄 POBIERZ PDF</button>
+      </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; background: #252525; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+      <thead style="background: #1A1A1A; color: #99FFCC; text-transform: uppercase; font-size: 0.85em;">
         <tr>
-          <th style="padding: 15px; text-align: left;">Zasób i Szczegóły</th>
-          <th style="padding: 15px; text-align: left;">Obsługuje</th>
-          <th style="padding: 15px; text-align: left;">Status</th>
-          <th style="padding: 15px; text-align: left; width: 30%;">Komentarze</th>
-          <th *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" style="padding: 15px; text-align: left;">Akcja</th>
+          <th style="padding: 20px; text-align: left;">Zasób</th>
+          <th style="padding: 20px; text-align: left;">Status</th>
+          <th style="padding: 20px; text-align: left; width: 30%;">Notatki i System</th>
+          <th class="no-print" *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" style="padding: 20px; text-align: left;">Akcja</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let app of applications" style="border-top: 1px solid #f1f1f1; transition: 0.2s;">
-          <td style="padding: 15px;">
-            <div style="font-weight: bold; color: #2c3e50;">{{ app.resource?.name || 'Zasób #' + app.resourceId }}</div>
-            <div style="font-size: 0.85em; color: #95a5a6; margin: 4px 0;">{{ app.resource?.description }}</div>
-            <small style="color: #3498db; font-weight: 500;">📅 {{ app.startTime | date:'dd.MM HH:mm' }}</small>
+        <tr *ngFor="let app of getFilteredApplications()" style="border-top: 1px solid #333; transition: 0.2s;">
+          <td style="padding: 20px;">
+            <div style="font-weight: bold; color: #FFFFFF;">{{ app.resource?.name }}</div>
+            <small style="color: #99FFCC;">📅 {{ app.startTime | date:'dd.MM HH:mm' }}</small>
           </td>
-
-          <td style="padding: 15px;">
-            <span *ngIf="app.assignedEmployee" style="color: #2980b9; font-weight: 500;">👷 {{ app.assignedEmployee }}</span>
-            <button *ngIf="(authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')) && !app.assignedEmployee" (click)="assignToMe(app.id)" style="background: #ebf5fb; color: #3498db; border: 1px solid #3498db; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">Przyjmij</button>
+          <td style="padding: 20px;">
+            <b [style.color]="app.status === 'ACCEPTED' ? '#99FFCC' : (app.status === 'REJECTED' ? '#FF6B6B' : '#FDCB6E')">{{ app.status }}</b>
           </td>
-
-          <td style="padding: 15px;">
-            <b (click)="showHistory(app.id)" 
-               [style.color]="app.status === 'ACCEPTED' ? '#2ecc71' : (app.status === 'REJECTED' ? '#e74c3c' : '#f1c40f')" 
-               style="cursor: pointer; text-decoration: underline; font-size: 0.9em;">
-              {{ app.status }}
-            </b>
-          </td>
-
-          <td style="padding: 15px;">
-            <div *ngFor="let c of app.comments" style="font-size: 0.85em; margin-bottom: 6px; padding: 4px; background: #f9f9f9; border-radius: 4px;">
-              <strong [style.color]="c.author === 'SYSTEM-BOT' ? '#e74c3c' : '#34495e'">{{ c.author }}:</strong> {{ c.content }}
+          <td style="padding: 20px;">
+            <div *ngFor="let c of app.comments" style="font-size: 0.85em; margin-bottom: 6px; border-left: 2px solid #2D4F4F; padding-left: 10px;">
+              <strong style="color: #99FFCC;">{{ c.author }}:</strong> {{ c.content }}
             </div>
-            <div style="display: flex; gap: 5px; margin-top: 8px;">
-              <input type="text" [(ngModel)]="newComments[app.id]" placeholder="Notatka..." style="flex-grow: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em;">
-              <button (click)="addComment(app.id)" style="background: #34495e; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">Dodaj</button>
+            <div class="no-print" style="display: flex; gap: 5px; margin-top: 10px;">
+              <input type="text" [(ngModel)]="newComments[app.id]" placeholder="Wpisz notatkę..." style="flex-grow: 1; padding: 6px; font-size: 0.85em;">
+              <button (click)="addComment(app.id)" style="background: #2D4F4F; color: #99FFCC; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">DODAJ</button>
             </div>
           </td>
-
-          <td *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" style="padding: 15px;">
-            <div *ngIf="app.status === 'PENDING'" style="display: flex; gap: 5px;">
-              <button (click)="changeStatus(app.id, 'ACCEPTED')" 
-                      style="background: #2ecc71; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(46, 204, 113, 0.3);">
-                Zatwierdź
-              </button>
-              <button (click)="changeStatus(app.id, 'REJECTED')" 
-                      style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);">
-                Odrzuć
-              </button>
+          <td class="no-print" *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" style="padding: 20px;">
+            <div *ngIf="app.status === 'PENDING'" style="display: flex; gap: 8px;">
+              <button (click)="changeStatus(app.id, 'ACCEPTED')" style="background: #99FFCC; color: #121212; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">✅ ZATWIERDŹ</button>
+              <button (click)="changeStatus(app.id, 'REJECTED')" style="background: #FF6B6B; color: #121212; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">🚫 ODRZUĆ</button>
             </div>
-            <div *ngIf="app.status !== 'PENDING'">
-              <span style="color: #bdc3c7; font-size: 0.85em; font-style: italic;">Przetworzono</span>
-            </div>
+            <button *ngIf="app.status !== 'PENDING'" (click)="changeStatus(app.id, 'PENDING')" style="background: #2D4F4F; color: #99FFCC; border: 1px solid #99FFCC; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">🔄 PRZYWRÓĆ</button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
 
-    <div style="margin-top: 25px; display: flex; justify-content: center; gap: 20px; align-items: center;">
-      <button (click)="prevPage()" [disabled]="currentPage === 0" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;">⬅️ Poprzednia</button>
-      <span style="color: #7f8c8d; font-weight: 500;">Strona {{ currentPage + 1 }} z {{ totalPages || 1 }}</span>
-      <button (click)="nextPage()" [disabled]="currentPage >= totalPages - 1" style="padding: 8px 15px; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;">Następna ➡️</button>
+  <div *ngIf="activeTab === 'employees'">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <div style="background: #252525; padding: 30px; border-radius: 12px;"><canvas id="statusChart"></canvas></div>
+      <div style="background: #252525; padding: 30px; border-radius: 12px;"><canvas id="workloadChart"></canvas></div>
     </div>
   </div>
 
-  <div *ngIf="activeTab === 'employees'" style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-    <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f1f1f1; padding-bottom: 10px;">📊 Obciążenie pracowników</h3>
-    <div *ngFor="let s of employeeStats" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f9f9f9; align-items: center;">
-      <span style="font-weight: 500; color: #34495e;">👤 {{ s.username }}</span>
-      <span style="background: #3498db; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold;">{{ s.completedCount }} wniosków</span>
-    </div>
+  <div class="no-print" *ngIf="toastMessage" [style.background]="toastType === 'success' ? '#99FFCC' : '#FF6B6B'" style="position: fixed; bottom: 30px; right: 30px; color: #121212; padding: 15px 25px; border-radius: 8px; font-weight: bold; z-index: 9999;">
+    {{ toastType === 'success' ? '✅' : '❌' }} {{ toastMessage }}
   </div>
+
 </div>

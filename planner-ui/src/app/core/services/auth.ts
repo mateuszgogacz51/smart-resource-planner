@@ -53,20 +53,29 @@ export class AuthService {
     }
   }
 
+  // --- ZMIANA 1: Bezpieczne pobieranie ról (Zawsze zwraca String) ---
   getUserRole(): string {
     const token = this.getToken();
     if (!token) return '';
     try {
       const decoded: any = jwtDecode(token);
-      // Obsługa różnych formatów ról ze Spring Boot
-      return decoded.role || decoded.roles || ''; 
+      const roles = decoded.role || decoded.roles || '';
+      
+      // Jeśli Spring Boot wysłał role jako tablicę (np. ['ROLE_ADMIN', 'ROLE_USER'])
+      // zamieniamy to na jeden string, żeby dashboard.ts nie crashował przy .toUpperCase()
+      if (Array.isArray(roles)) {
+        return roles.join(',').toUpperCase();
+      }
+      return String(roles).toUpperCase();
     } catch (e) {
       return '';
     }
   }
 
+  // --- ZMIANA 2: Pancerne sprawdzanie roli Admina ---
   isAdmin(): boolean {
     const role = this.getUserRole();
-    return role === 'ROLE_ADMIN' || role === 'ADMIN';
+    // Sprawdzamy, czy ciąg zawiera słowo ADMIN, niezależnie od tego, czy to ROLE_ADMIN,ROLE_USER itp.
+    return role.includes('ADMIN');
   }
 }

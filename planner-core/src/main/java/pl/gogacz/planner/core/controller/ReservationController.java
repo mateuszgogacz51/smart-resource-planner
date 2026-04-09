@@ -11,7 +11,7 @@ import pl.gogacz.planner.core.model.*;
 import pl.gogacz.planner.core.repository.AuditLogRepository;
 import pl.gogacz.planner.core.repository.CommentRepository;
 import pl.gogacz.planner.core.repository.ReservationRepository;
-import pl.gogacz.planner.core.repository.ResourceRepository; // DODANY IMPORT
+import pl.gogacz.planner.core.repository.ResourceRepository;
 import pl.gogacz.planner.core.service.RuleService;
 import pl.gogacz.planner.dto.ReservationRuleContext;
 
@@ -27,18 +27,18 @@ public class ReservationController {
     private final ReservationRepository reservationRepository;
     private final CommentRepository commentRepository;
     private final AuditLogRepository auditLogRepository;
-    private final ResourceRepository resourceRepository; // DODANE POLE
+    private final ResourceRepository resourceRepository;
     private final RuleService ruleService;
 
     public ReservationController(ReservationRepository reservationRepository,
                                  CommentRepository commentRepository,
                                  AuditLogRepository auditLogRepository,
-                                 ResourceRepository resourceRepository, // DODANE DO KONSTRUKTORA
+                                 ResourceRepository resourceRepository,
                                  RuleService ruleService) {
         this.reservationRepository = reservationRepository;
         this.commentRepository = commentRepository;
         this.auditLogRepository = auditLogRepository;
-        this.resourceRepository = resourceRepository; // PRZYPISANIE
+        this.resourceRepository = resourceRepository;
         this.ruleService = ruleService;
     }
 
@@ -46,7 +46,8 @@ public class ReservationController {
     public Page<Reservation> getAllReservations(
             Authentication auth,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
 
@@ -54,26 +55,19 @@ public class ReservationController {
                 .anyMatch(a -> a.getAuthority().toUpperCase().contains("ADMIN") ||
                         a.getAuthority().toUpperCase().contains("EMPLOYEE"));
 
+        String searchTerm = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+
         if (isPrivileged) {
-            return reservationRepository.findAll(pageable);
+            return searchTerm != null
+                    ? reservationRepository.findAllWithSearch(searchTerm, pageable)
+                    : reservationRepository.findAll(pageable);
         } else {
-            return reservationRepository.findByUserId(auth.getName(), pageable);
+            return searchTerm != null
+                    ? reservationRepository.findByUserIdWithSearch(auth.getName(), searchTerm, pageable)
+                    : reservationRepository.findByUserId(auth.getName(), pageable);
         }
     }
 
-    @GetMapping("/my")
-    public Page<Reservation> getMyApplications(
-            Authentication auth,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        return reservationRepository.findByUserId(auth.getName(), pageable);
-    }
-
-    /**
-     * POPRAWIONA METODA TWORZENIA:
-     * Przyjmuje Mapę, aby wyciągnąć samo resourceId i zamienić je na obiekt Resource
-     */
     @PostMapping
     public Reservation createApplication(@RequestBody Map<String, Object> payload, Authentication auth) {
         Reservation reservation = new Reservation();
@@ -81,19 +75,16 @@ public class ReservationController {
         reservation.setCreatedAt(LocalDateTime.now());
         reservation.setStatus(ReservationStatus.PENDING);
 
-        // 1. Wyciągamy dane z payloadu (Angular wysyła resourceId, startTime, endTime)
         Long resId = Long.valueOf(payload.get("resourceId").toString());
         LocalDateTime start = LocalDateTime.parse(payload.get("startTime").toString());
         LocalDateTime end = LocalDateTime.parse(payload.get("endTime").toString());
 
-        // 2. Pobieramy pełny obiekt Resource z bazy i przypisujemy go
         Resource resource = resourceRepository.findById(resId)
                 .orElseThrow(() -> new RuntimeException("Nie znaleziono sprzętu o ID: " + resId));
         reservation.setResource(resource);
         reservation.setStartTime(start);
         reservation.setEndTime(end);
 
-        // --- WALIDACJA DROOLS ---
         ReservationRuleContext ctx = new ReservationRuleContext();
         ctx.setStartTime(reservation.getStartTime());
         ctx.setEndTime(reservation.getEndTime());
@@ -141,6 +132,13 @@ public class ReservationController {
         return ResponseEntity.ok(reservationRepository.save(reservation));
     }
 
+    @PatchMapping("/{id}/unassign")
+    public ResponseEntity<Reservation> unassignApplication(@PathVariable Long id, Authentication auth) {
+        Reservation reservation = reservationRepository.findById(id).orElseThrow();
+        reservation.setAssignedEmployee(null);
+        return ResponseEntity.ok(reservationRepository.save(reservation));
+    }
+
     @PostMapping("/{id}/comments")
     public ResponseEntity<Reservation> addComment(@PathVariable Long id, @RequestBody Map<String, String> payload, Authentication auth) {
         Reservation reservation = reservationRepository.findById(id).orElseThrow();
@@ -155,5 +153,16 @@ public class ReservationController {
     @GetMapping("/{id}/history")
     public List<AuditLog> getHistory(@PathVariable Long id) {
         return auditLogRepository.findByReservationIdOrderByTimestampDesc(id);
+    }
+
+    // --- NOWY ENDPOINT DLA WYKRESÓW ---
+    @GetMapping("/stats/statuses")
+    public ResponseEntity<Map<String, Long>> getStatusStats() {
+        Map<String, Long> stats = reservationRepository.findAll().stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        r -> r.getStatus().name(),
+                        java.util.stream.Collectors.counting()
+                ));
+        return ResponseEntity.ok(stats);
     }
 }

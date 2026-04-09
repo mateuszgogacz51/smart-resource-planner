@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,20 +8,20 @@ import { AuthService } from '../../../core/services/auth';
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './login.html',
-  styleUrls: ['./login.scss']
+  templateUrl: './login.html'
 })
 export class LoginComponent {
-  // Przełącznik między trybem logowania a rejestracji
-  isRegisterMode = false;
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  // Zmienna do wyświetlania komunikatów o błędach
-  errorMessage = '';
+  isLoginMode = true;
+  confirmPassword = '';
 
-  // Obiekt przechowujący dane do logowania
-  credentials = { username: '', password: '' };
+  loginData = {
+    username: '',
+    password: ''
+  };
 
-  // Obiekt przechowujący dane do rejestracji (TO LIKWIDUJE CZERWONE PODKREŚLENIA)
   registerData = {
     username: '',
     password: '',
@@ -30,44 +30,31 @@ export class LoginComponent {
     lastName: ''
   };
 
-  constructor(
-    private authService: AuthService, 
-    private router: Router
-  ) {}
-
-  // Metoda do przełączania widoku (Logowanie <-> Rejestracja)
-  toggleMode() {
-    this.isRegisterMode = !this.isRegisterMode;
-    this.errorMessage = ''; // Czyścimy błędy przy przełączaniu
-  }
-
-  // Metoda logowania
   login() {
-    this.authService.login(this.credentials).subscribe({
-      next: (res: any) => {
-        console.log('Logowanie udane, otrzymano odpowiedź:', res);
-        this.router.navigate(['/dashboard']); 
-      },
-      error: (err: any) => {
-        console.error('Błąd podczas logowania:', err);
-        this.errorMessage = 'Nieprawidłowy login lub hasło. Sprawdź połączenie z bazą danych.';
-        alert(this.errorMessage);
-      }
+    if (!this.loginData.username || !this.loginData.password) {
+      alert('Wypełnij pola logowania.');
+      return;
+    }
+    this.authService.login(this.loginData).subscribe({
+      next: () => this.router.navigate(['/dashboard']),
+      error: () => alert('Błędny login lub hasło.')
     });
   }
 
-  // Metoda rejestracji
   register() {
+    if (this.registerData.password !== this.confirmPassword) {
+      alert('Hasła nie są zgodne!');
+      return;
+    }
+
     this.authService.register(this.registerData).subscribe({
-      next: (msg: string) => {
-        alert(msg); // Pokazuje z serwera: "Rejestracja zakończona sukcesem!"
-        this.toggleMode(); // Wraca do ekranu logowania
-        this.credentials.username = this.registerData.username; // Przepisuje wpisany login
+      next: () => {
+        alert('✅ Konto utworzone! Możesz się teraz zalogować.');
+        this.isLoginMode = true;
+        this.registerData = { username: '', password: '', email: '', firstName: '', lastName: '' };
+        this.confirmPassword = '';
       },
-      error: (err: any) => {
-        console.error('Błąd rejestracji:', err);
-        alert('Błąd rejestracji: ' + (err.error || err.message));
-      }
+      error: (err) => alert('❌ Błąd rejestracji: ' + (err.error || 'Spróbuj ponownie.'))
     });
   }
 }

@@ -1,54 +1,74 @@
-<div style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f7f6;">
-  <div style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; font-family: Arial, sans-serif;">
+<div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #1E1E1E;">
+  <div style="background: #252525; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 450px; border-top: 4px solid #99FFCC;">
     
-    <h2 style="text-align: center; margin-top: 0; color: #333;">
-      {{ isRegisterMode ? 'Rejestracja (Nowy Użytkownik)' : 'Logowanie (Enterprise Planner)' }}
-    </h2>
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h2 style="color: #FFFFFF; margin: 0; font-size: 2.1em; letter-spacing: 1px;">🚀 Smart <span style="color: #99FFCC;">Planner</span></h2>
+      <p style="color: #A0A0A0; font-size: 0.9em; margin-top: 10px; font-weight: 300;">Enterprise Resource Management System</p>
+    </div>
 
-    <div *ngIf="!isRegisterMode">
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; color: #555;">Użytkownik:</label>
-        <input type="text" [(ngModel)]="credentials.username" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-      </div>
+    <div *ngIf="isLoginMode">
       <div style="margin-bottom: 20px;">
-        <label style="display: block; margin-bottom: 5px; color: #555;">Hasło:</label>
-        <input type="password" [(ngModel)]="credentials.password" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+        <label style="display: block; color: #99FFCC; font-size: 0.75em; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Nazwa użytkownika</label>
+        <input type="text" [(ngModel)]="loginData.username" style="width: 100%; padding: 14px; box-sizing: border-box; background: #1E1E1E; border: 1px solid #444; color: white; border-radius: 6px; outline: none;" placeholder="Wpisz login...">
       </div>
-      <button (click)="login()" style="width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px;">
+      
+      <div style="margin-bottom: 25px;">
+        <label style="display: block; color: #99FFCC; font-size: 0.75em; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Hasło</label>
+        <input type="password" [(ngModel)]="loginData.password" style="width: 100%; padding: 14px; box-sizing: border-box; background: #1E1E1E; border: 1px solid #444; color: white; border-radius: 6px; outline: none;" placeholder="••••••••">
+      </div>
+
+      <button (click)="login()" style="width: 100%; background: #99FFCC; color: #121212; border: none; padding: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;">
         Zaloguj się
       </button>
-      
-      <div style="text-align: center; margin-top: 15px; font-size: 14px;">
-        Nie masz konta? <a href="javascript:void(0)" (click)="toggleMode()" style="color: #007bff; text-decoration: none; font-weight: bold;">Zarejestruj się</a>
+
+      <div style="text-align: center; margin-top: 25px;">
+        <span style="color: #A0A0A0; font-size: 0.9em;">Nie posiadasz konta? </span>
+        <a (click)="isLoginMode = false" style="color: #99FFCC; cursor: pointer; font-weight: bold; text-decoration: underline;">Utwórz konto Enterprise</a>
       </div>
     </div>
 
-    <div *ngIf="isRegisterMode">
-      <div style="margin-bottom: 10px;">
-        <label style="display: block; margin-bottom: 5px; color: #555;">Imię:</label>
-        <input type="text" [(ngModel)]="registerData.firstName" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+    <div *ngIf="!isLoginMode">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+        <div>
+          <label style="display: block; color: #99FFCC; font-size: 0.75em; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Imię</label>
+          <input type="text" [(ngModel)]="registerData.firstName" style="width: 100%; padding: 12px; box-sizing: border-box; background: #1E1E1E; border: 1px solid #444; color: white; border-radius: 6px;" placeholder="Jan">
+        </div>
+        <div>
+          <label style="display: block; color: #99FFCC; font-size: 0.75em; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Nazwisko</label>
+          <input type="text" [(ngModel)]="registerData.lastName" style="width: 100%; padding: 12px; box-sizing: border-box; background: #1E1E1E; border: 1px solid #444; color: white; border-radius: 6px;" placeholder="Kowalski">
+        </div>
       </div>
-      <div style="margin-bottom: 10px;">
-        <label style="display: block; margin-bottom: 5px; color: #555;">Nazwisko:</label>
-        <input type="text" [(ngModel)]="registerData.lastName" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; color: #99FFCC; font-size: 0.75em; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Login użytkownika</label>
+        <input type="text" [(ngModel)]="registerData.username" style="width: 100%; padding: 12px; box-sizing: border-box; background: #1E1E1E; border: 1px solid #444; color: white; border-radius: 6px;">
       </div>
-      <div style="margin-bottom: 10px;">
-        <label style="display: block; margin-bottom: 5px; color: #555;">E-mail:</label>
-        <input type="email" [(ngModel)]="registerData.email" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; color: #99FFCC; font-size: 0.75em; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Adres E-mail</label>
+        <input type="email" [(ngModel)]="registerData.email" style="width: 100%; padding: 12px; box-sizing: border-box; background: #1E1E1E; border: 1px solid #444; color: white; border-radius: 6px;" placeholder="jan@firma.pl">
       </div>
-      <div style="margin-bottom: 10px;">
-        <label style="display: block; margin-bottom: 5px; color: #555;">Login:</label>
-        <input type="text" [(ngModel)]="registerData.username" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; color: #99FFCC; font-size: 0.75em; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Hasło</label>
+        <input type="password" [(ngModel)]="registerData.password" style="width: 100%; padding: 12px; box-sizing: border-box; background: #1E1E1E; border: 1px solid #444; color: white; border-radius: 6px;">
       </div>
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; margin-bottom: 5px; color: #555;">Hasło:</label>
-        <input type="password" [(ngModel)]="registerData.password" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+
+      <div style="margin-bottom: 25px;">
+        <label style="display: block; color: #99FFCC; font-size: 0.75em; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Potwierdź hasło</label>
+        <input type="password" [(ngModel)]="confirmPassword" style="width: 100%; padding: 12px; box-sizing: border-box; background: #1E1E1E; border: 1px solid #444; color: white; border-radius: 6px;">
+        <small *ngIf="confirmPassword && registerData.password !== confirmPassword" style="color: #FF6B6B; margin-top: 5px; display: block;">⚠️ Hasła nie są identyczne!</small>
       </div>
-      <button (click)="register()" style="width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px;">
-        Utwórz konto
+
+      <button (click)="register()" 
+              [disabled]="!registerData.username || !registerData.password || registerData.password !== confirmPassword"
+              [style.opacity]="(registerData.password !== confirmPassword) ? 0.5 : 1"
+              style="width: 100%; background: #2D4F4F; color: #99FFCC; border: 1px solid #99FFCC; padding: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase;">
+        Zarejestruj konto
       </button>
-      <div style="text-align: center; margin-top: 15px; font-size: 14px;">
-        Masz już konto? <a href="javascript:void(0)" (click)="toggleMode()" style="color: #007bff; text-decoration: none; font-weight: bold;">Zaloguj się</a>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <a (click)="isLoginMode = true" style="color: #99FFCC; cursor: pointer; font-size: 0.9em;">Powrót do logowania</a>
       </div>
     </div>
 
