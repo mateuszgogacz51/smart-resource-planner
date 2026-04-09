@@ -64,8 +64,8 @@ export class DashboardComponent implements OnInit {
     this.appService.createApplication(this.newApp).subscribe({
       next: () => {
         alert('✅ Wysłano! SYSTEM-BOT zweryfikuje wniosek.');
-        this.loadData();
         this.newApp = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' }; 
+        this.loadData(); // AUTO-REFRESH
       },
       error: (err: any) => this.handleError(err)
     });
@@ -86,23 +86,30 @@ export class DashboardComponent implements OnInit {
   changeStatus(id: number, newStatus: string) {
     this.appService.updateStatus(id, newStatus.toUpperCase()).subscribe({
       next: () => {
-        alert('✅ Zmieniono status!');
-        this.loadData();
+        this.loadData(); // AUTO-REFRESH
       },
       error: (err: any) => this.handleError(err)
     });
   }
 
   assignToMe(id: number) {
-    this.appService.assignApplication(id).subscribe(() => this.loadData());
+    this.appService.assignApplication(id).subscribe({
+      next: () => {
+        this.loadData(); // AUTO-REFRESH
+      },
+      error: (err: any) => this.handleError(err)
+    });
   }
 
   addComment(id: number) {
     const content = this.newComments[id];
     if (!content) return;
-    this.appService.addComment(id, content).subscribe(() => {
-      this.newComments[id] = '';
-      this.loadData();
+    this.appService.addComment(id, content).subscribe({
+      next: () => {
+        this.newComments[id] = '';
+        this.loadData(); // AUTO-REFRESH
+      },
+      error: (err: any) => this.handleError(err)
     });
   }
 
@@ -118,7 +125,11 @@ export class DashboardComponent implements OnInit {
 
   nextPage() { if (this.currentPage < this.totalPages - 1) { this.currentPage++; this.loadData(); } }
   prevPage() { if (this.currentPage > 0) { this.currentPage--; this.loadData(); } }
-  private handleError(err: any) { alert("❌ Błąd: " + (err.error?.message || "Brak połączenia")); }
+  
+  private handleError(err: any) { 
+    alert("❌ Błąd: " + (err.error?.message || "Brak połączenia z serwerem")); 
+  }
+
   isAdmin(): boolean { return this.authService.isAdmin(); }
   logout() { this.authService.logout(); this.router.navigate(['/login']); }
 }

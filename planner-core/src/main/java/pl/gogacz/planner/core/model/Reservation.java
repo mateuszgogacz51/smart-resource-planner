@@ -17,7 +17,10 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long resourceId;
+    @ManyToOne
+    @JoinColumn(name = "resource_id")
+    private Resource resource; // TO POLE TERAZ ISTNIEJE ZAMIAST resourceId
+
     private String userId;
     private String assignedEmployee;
 
@@ -34,7 +37,6 @@ public class Reservation {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    // --- NOWA RELACJA: Wiele komentarzy do jednego wniosku ---
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
@@ -43,8 +45,9 @@ public class Reservation {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Long getResourceId() { return resourceId; }
-    public void setResourceId(Long resourceId) { this.resourceId = resourceId; }
+    // --- POPRAWIONE GETTERY I SETTERY DLA RESOURCE ---
+    public Resource getResource() { return resource; }
+    public void setResource(Resource resource) { this.resource = resource; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
@@ -64,9 +67,9 @@ public class Reservation {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    // --- GETTERY I SETTERY DLA KOMENTARZY ---
     public List<Comment> getComments() { return comments; }
     public void setComments(List<Comment> comments) { this.comments = comments; }
+
     public String getAssignedEmployee() { return assignedEmployee; }
     public void setAssignedEmployee(String assignedEmployee) { this.assignedEmployee = assignedEmployee; }
 }

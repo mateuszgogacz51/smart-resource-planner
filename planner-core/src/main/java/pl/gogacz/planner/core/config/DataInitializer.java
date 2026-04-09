@@ -35,17 +35,16 @@ public class DataInitializer {
             if (resourceRepository.count() == 0) {
                 Resource res1 = new Resource();
                 res1.setName("Laptop Dell XPS 15");
-                res1.setDescription("i7, 32GB RAM");
+                res1.setDescription("Procesor i7, 32GB RAM, Matryca 4K. Idealny do projektowania.");
                 res1.setStatus(ResourceStatus.AVAILABLE);
 
                 Resource res2 = new Resource();
-                res2.setName("Projektor EPSON");
-                res2.setDescription("Salka Konferencyjna A");
+                res2.setName("Projektor EPSON EB-L");
+                res2.setDescription("Jasność 6000 lumenów, HDMI, Wi-Fi. Salka Konferencyjna A.");
                 res2.setStatus(ResourceStatus.AVAILABLE);
 
-                resourceRepository.save(res1);
-                resourceRepository.save(res2);
-                System.out.println("✅ Dodano zasoby testowe do bazy!");
+                resourceRepository.saveAll(List.of(res1, res2));
+                System.out.println("✅ Dodano profesjonalne zasoby testowe!");
             }
         };
     }

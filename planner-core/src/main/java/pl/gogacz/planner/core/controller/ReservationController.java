@@ -7,13 +7,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import pl.gogacz.planner.core.model.AuditLog;
-import pl.gogacz.planner.core.model.Comment;
-import pl.gogacz.planner.core.model.Reservation;
-import pl.gogacz.planner.core.model.ReservationStatus;
+import pl.gogacz.planner.core.model.*;
 import pl.gogacz.planner.core.repository.AuditLogRepository;
 import pl.gogacz.planner.core.repository.CommentRepository;
 import pl.gogacz.planner.core.repository.ReservationRepository;
+import pl.gogacz.planner.core.repository.ResourceRepository; // DODANY IMPORT
 import pl.gogacz.planner.core.service.RuleService;
 import pl.gogacz.planner.dto.ReservationRuleContext;
 
@@ -29,15 +27,18 @@ public class ReservationController {
     private final ReservationRepository reservationRepository;
     private final CommentRepository commentRepository;
     private final AuditLogRepository auditLogRepository;
+    private final ResourceRepository resourceRepository; // DODANE POLE
     private final RuleService ruleService;
 
     public ReservationController(ReservationRepository reservationRepository,
                                  CommentRepository commentRepository,
                                  AuditLogRepository auditLogRepository,
+                                 ResourceRepository resourceRepository, // DODANE DO KONSTRUKTORA
                                  RuleService ruleService) {
         this.reservationRepository = reservationRepository;
         this.commentRepository = commentRepository;
         this.auditLogRepository = auditLogRepository;
+        this.resourceRepository = resourceRepository; // PRZYPISANIE
         this.ruleService = ruleService;
     }
 
@@ -69,11 +70,30 @@ public class ReservationController {
         return reservationRepository.findByUserId(auth.getName(), pageable);
     }
 
+    /**
+     * POPRAWIONA METODA TWORZENIA:
+     * Przyjmuje Mapę, aby wyciągnąć samo resourceId i zamienić je na obiekt Resource
+     */
     @PostMapping
-    public Reservation createApplication(@RequestBody Reservation reservation, Authentication auth) {
+    public Reservation createApplication(@RequestBody Map<String, Object> payload, Authentication auth) {
+        Reservation reservation = new Reservation();
         reservation.setUserId(auth.getName());
         reservation.setCreatedAt(LocalDateTime.now());
+        reservation.setStatus(ReservationStatus.PENDING);
 
+        // 1. Wyciągamy dane z payloadu (Angular wysyła resourceId, startTime, endTime)
+        Long resId = Long.valueOf(payload.get("resourceId").toString());
+        LocalDateTime start = LocalDateTime.parse(payload.get("startTime").toString());
+        LocalDateTime end = LocalDateTime.parse(payload.get("endTime").toString());
+
+        // 2. Pobieramy pełny obiekt Resource z bazy i przypisujemy go
+        Resource resource = resourceRepository.findById(resId)
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono sprzętu o ID: " + resId));
+        reservation.setResource(resource);
+        reservation.setStartTime(start);
+        reservation.setEndTime(end);
+
+        // --- WALIDACJA DROOLS ---
         ReservationRuleContext ctx = new ReservationRuleContext();
         ctx.setStartTime(reservation.getStartTime());
         ctx.setEndTime(reservation.getEndTime());
@@ -82,6 +102,7 @@ public class ReservationController {
         if (!ctx.isValid()) {
             reservation.setStatus(ReservationStatus.REJECTED);
             Reservation saved = reservationRepository.save(reservation);
+
             Comment systemNote = new Comment();
             systemNote.setAuthor("SYSTEM-BOT");
             systemNote.setContent(ctx.getRejectionReason());
@@ -90,7 +111,6 @@ public class ReservationController {
             return saved;
         }
 
-        reservation.setStatus(ReservationStatus.PENDING);
         return reservationRepository.save(reservation);
     }
 
