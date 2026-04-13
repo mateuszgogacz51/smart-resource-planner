@@ -23,7 +23,10 @@ export class DashboardComponent implements OnInit {
 
   applications: any[] = [];
   userRole: string = '';
-  activeTab: 'applications' | 'employees' = 'applications';
+  
+  // Zaktualizowana lista zakładek (dodane moduły Admina)
+  activeTab: 'applications' | 'employees' | 'admin-users' | 'admin-resources' = 'applications';
+  
   employeeStats: any[] = [];
   availableResources: any[] = [];
 
@@ -186,10 +189,13 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  switchTab(tab: 'applications' | 'employees') {
+  switchTab(tab: 'applications' | 'employees' | 'admin-users' | 'admin-resources') {
     this.activeTab = tab;
-    if (tab === 'employees') this.loadEmployeeStats();
-    else this.loadData();
+    if (tab === 'employees') {
+      this.loadEmployeeStats();
+    } else if (tab === 'applications') {
+      this.loadData();
+    }
     this.cdr.detectChanges();
   }
 

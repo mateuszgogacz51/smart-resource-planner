@@ -3,29 +3,44 @@
   <div class="no-print" style="display: flex; justify-content: space-between; background: #252525; padding: 15px 25px; border-radius: 8px; margin-bottom: 25px; align-items: center; border-bottom: 2px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
     <span style="font-weight: bold; font-size: 1.4em; color: #FFFFFF;"><span style="color: #99FFCC;">🚀 Smart</span> Resource Planner</span>
     <div style="display: flex; align-items: center; gap: 20px;">
-      <span style="color: #A0A0A0; font-size: 0.95em;">Pracownik: <strong style="color: #FFFFFF;">{{ authService.getUsername() }}</strong></span>
+      <span style="color: #A0A0A0; font-size: 0.95em;">Zalogowany: <strong style="color: #FFFFFF;">{{ authService.getUsername() }}</strong></span>
       <button (click)="logout()" style="background: #FF6B6B; color: #121212; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 0.8em;">Wyloguj</button>
     </div>
   </div>
 
-  <div class="no-print" *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" style="margin-bottom: 25px; display: flex; gap: 15px;">
-    <button (click)="switchTab('applications')" 
+  <div class="no-print" style="margin-bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap;">
+    <button *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" 
+            (click)="switchTab('applications')" 
             [style.background]="activeTab === 'applications' ? '#2D4F4F' : '#252525'" 
             [style.color]="activeTab === 'applications' ? '#99FFCC' : '#888'"
             [style.border]="activeTab === 'applications' ? '1px solid #99FFCC' : '1px solid #333'"
-            style="padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; position: relative; transition: 0.3s;">
-      📋 ZARZĄDZANIE WNIOSKAMI
-      <span *ngIf="pendingCount > 0" 
-            style="position: absolute; top: -8px; right: -8px; background: #FF6B6B; color: #121212; font-size: 0.75em; padding: 2px 8px; border-radius: 12px; font-weight: 900; box-shadow: 0 0 10px rgba(255,107,107,0.4);">
-        {{ pendingCount }}
-      </span>
+            style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; position: relative;">
+      📋 WNIOSKI
+      <span *ngIf="pendingCount > 0" style="position: absolute; top: -6px; right: -6px; background: #FF6B6B; color: #121212; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; font-weight: 900;">{{ pendingCount }}</span>
     </button>
+    
     <button *ngIf="authService.getUserRole().includes('ADMIN')" (click)="switchTab('employees')" 
             [style.background]="activeTab === 'employees' ? '#2D4F4F' : '#252525'" 
             [style.color]="activeTab === 'employees' ? '#99FFCC' : '#888'"
             [style.border]="activeTab === 'employees' ? '1px solid #99FFCC' : '1px solid #333'"
-            style="padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">
-      👥 STATYSTYKI WYDAJNOŚCI
+            style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+      📊 STATYSTYKI
+    </button>
+
+    <button *ngIf="authService.getUserRole().includes('ADMIN')" (click)="switchTab('admin-users')" 
+            [style.background]="activeTab === 'admin-users' ? '#2D4F4F' : '#252525'" 
+            [style.color]="activeTab === 'admin-users' ? '#99FFCC' : '#888'"
+            [style.border]="activeTab === 'admin-users' ? '1px solid #99FFCC' : '1px solid #333'"
+            style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-left: auto;">
+      🛡️ ZARZĄDZANIE KONTAMI
+    </button>
+
+    <button *ngIf="authService.getUserRole().includes('ADMIN')" (click)="switchTab('admin-resources')" 
+            [style.background]="activeTab === 'admin-resources' ? '#2D4F4F' : '#252525'" 
+            [style.color]="activeTab === 'admin-resources' ? '#99FFCC' : '#888'"
+            [style.border]="activeTab === 'admin-resources' ? '1px solid #99FFCC' : '1px solid #333'"
+            style="padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+      📦 MAGAZYN ZASOBÓW
     </button>
   </div>
 
@@ -76,7 +91,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let app of getFilteredApplications()" style="border-top: 1px solid #333; transition: 0.2s;">
+        <tr *ngFor="let app of getFilteredApplications()" style="border-top: 1px solid #333;">
           <td style="padding: 20px;">
             <div style="font-weight: bold; color: #FFFFFF;">{{ app.resource?.name }}</div>
             <small style="color: #99FFCC;">📅 {{ app.startTime | date:'dd.MM HH:mm' }}</small>
@@ -110,6 +125,16 @@
       <div style="background: #252525; padding: 30px; border-radius: 12px;"><canvas id="statusChart"></canvas></div>
       <div style="background: #252525; padding: 30px; border-radius: 12px;"><canvas id="workloadChart"></canvas></div>
     </div>
+  </div>
+
+  <div *ngIf="activeTab === 'admin-users'" style="background: #252525; padding: 40px; border-radius: 12px; text-align: center; border: 2px dashed #444;">
+    <h2 style="color: #99FFCC;">🛡️ Panel Audytu i Kont (Wkrótce)</h2>
+    <p style="color: #888;">Tutaj Admin będzie miał pełen wgląd w historię logowań, zmianę ról i resetowanie haseł.</p>
+  </div>
+
+  <div *ngIf="activeTab === 'admin-resources'" style="background: #252525; padding: 40px; border-radius: 12px; text-align: center; border: 2px dashed #444;">
+    <h2 style="color: #99FFCC;">📦 Zarządzanie Magazynem (Wkrótce)</h2>
+    <p style="color: #888;">Tutaj Admin będzie dodawał i usuwał sprzęt (auta, laptopy) z bazy danych.</p>
   </div>
 
   <div class="no-print" *ngIf="toastMessage" [style.background]="toastType === 'success' ? '#99FFCC' : '#FF6B6B'" style="position: fixed; bottom: 30px; right: 30px; color: #121212; padding: 15px 25px; border-radius: 8px; font-weight: bold; z-index: 9999;">

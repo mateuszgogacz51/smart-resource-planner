@@ -86,3 +86,29 @@ tbody tr:hover {
 .dashboard-card, table, .stats-container, .form-container {
   animation: fadeIn 0.4s ease-out;
 }
+
+button, input, select, a, tr {
+  transition: all 0.2s ease-in-out !important;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+tbody tr:hover {
+  background-color: #2c2c2c !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+div[ng-reflect-ng-if] {
+  animation: fadeIn 0.3s ease-out;
+}
