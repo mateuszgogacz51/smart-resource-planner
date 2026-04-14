@@ -132,9 +132,56 @@
     <p style="color: #888;">Tutaj Admin będzie miał pełen wgląd w historię logowań, zmianę ról i resetowanie haseł.</p>
   </div>
 
-  <div *ngIf="activeTab === 'admin-resources'" style="background: #252525; padding: 40px; border-radius: 12px; text-align: center; border: 2px dashed #444;">
-    <h2 style="color: #99FFCC;">📦 Zarządzanie Magazynem (Wkrótce)</h2>
-    <p style="color: #888;">Tutaj Admin będzie dodawał i usuwał sprzęt (auta, laptopy) z bazy danych.</p>
+  <div *ngIf="activeTab === 'admin-resources'">
+    
+    <div class="no-print" style="background: #252525; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+      <h3 style="margin-top: 0; color: #FFFFFF;">➕ Rejestracja Nowego Sprzętu</h3>
+      <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+        
+        <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1;">
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">NAZWA / MODEL:</label>
+          <input type="text" [(ngModel)]="newResourceData.name" placeholder="np. Dell Latitude 7420" style="padding: 12px; width: 100%;">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">KATEGORIA:</label>
+          <select [(ngModel)]="newResourceData.type" style="padding: 12px; min-width: 150px;">
+            <option value="LAPTOP">💻 Laptop</option>
+            <option value="CAR">🚗 Samochód</option>
+            <option value="ROOM">🚪 Sala Konf.</option>
+            <option value="OTHER">📦 Inne</option>
+          </select>
+        </div>
+
+        <button (click)="addNewResource()" [disabled]="!newResourceData.name"
+                style="background: #99FFCC; color: #121212; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-weight: bold;">DODAJ DO BAZY</button>
+      </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; background: #252525; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+      <thead style="background: #1A1A1A; color: #99FFCC; text-transform: uppercase; font-size: 0.85em;">
+        <tr>
+          <th style="padding: 20px; text-align: left; width: 10%;">ID</th>
+          <th style="padding: 20px; text-align: left;">Nazwa / Model Zasobu</th>
+          <th style="padding: 20px; text-align: left;">Status Systemowy</th>
+          <th style="padding: 20px; text-align: right;">Akcja</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let res of availableResources" style="border-top: 1px solid #333;">
+          <td style="padding: 20px; color: #888; font-weight: bold;">#{{ res.id }}</td>
+          <td style="padding: 20px;">
+            <div style="font-weight: bold; color: #FFFFFF; font-size: 1.1em;">{{ res.name }}</div>
+          </td>
+          <td style="padding: 20px;">
+            <span style="background: #2D4F4F; color: #99FFCC; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold;">AKTYWNY W BAZIE</span>
+          </td>
+          <td style="padding: 20px; text-align: right;">
+            <button (click)="removeResource(res.id)" style="background: #FF6B6B; color: #121212; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">🗑️ USUŃ</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="no-print" *ngIf="toastMessage" [style.background]="toastType === 'success' ? '#99FFCC' : '#FF6B6B'" style="position: fixed; bottom: 30px; right: 30px; color: #121212; padding: 15px 25px; border-radius: 8px; font-weight: bold; z-index: 9999;">

@@ -24,7 +24,6 @@ export class DashboardComponent implements OnInit {
   applications: any[] = [];
   userRole: string = '';
   
-  // Zaktualizowana lista zakładek (dodane moduły Admina)
   activeTab: 'applications' | 'employees' | 'admin-users' | 'admin-resources' = 'applications';
   
   employeeStats: any[] = [];
@@ -39,6 +38,9 @@ export class DashboardComponent implements OnInit {
   newApp: any = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
   newComments: { [key: number]: string } = {};
 
+  // --- NOWE DANE DO MAGAZYNU ---
+  newResourceData = { name: '', type: 'LAPTOP' };
+
   // Live Search
   searchTerm: string = '';
   searchSubject: Subject<string> = new Subject<string>();
@@ -47,7 +49,6 @@ export class DashboardComponent implements OnInit {
   statusFilter: string = 'ALL';
   pendingCount: number = 0;
 
-  // Toasty i Wykresy
   toastMessage: string | null = null;
   toastType: 'success' | 'error' = 'success';
   statusChart: any;
@@ -105,17 +106,13 @@ export class DashboardComponent implements OnInit {
       next: (response) => {
         this.applications = response.content; 
         this.totalPages = response.totalPages;
-        
-        // Aktualizacja licznika PENDING dla Admina
         this.pendingCount = this.applications.filter(a => a.status === 'PENDING').length;
-        
         this.cdr.detectChanges(); 
       },
       error: (err: any) => this.handleError(err)
     });
   }
 
-  // Funkcje Filtrowania i Raportów
   getFilteredApplications() {
     if (this.statusFilter === 'ALL') return this.applications;
     return this.applications.filter(app => app.status === this.statusFilter);
@@ -199,7 +196,6 @@ export class DashboardComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // Obsługa akcji statusu i komentarzy
   changeStatus(id: number, newStatus: string) {
     this.appService.updateStatus(id, newStatus.toUpperCase()).subscribe({
       next: () => { 
@@ -239,6 +235,30 @@ export class DashboardComponent implements OnInit {
       },
       error: (err: any) => this.handleError(err)
     });
+  }
+
+  // --- NOWE METODY MAGAZYNU ---
+  addNewResource() {
+    this.appService.createResource(this.newResourceData).subscribe({
+      next: () => {
+        this.showToast('✅ Dodano nowy zasób do magazynu!');
+        this.newResourceData.name = ''; 
+        this.loadResources(); 
+      },
+      error: () => this.showToast('❌ Błąd podczas dodawania zasobu.', 'error')
+    });
+  }
+
+  removeResource(id: number) {
+    if(confirm('Na pewno chcesz usunąć ten zasób? Powiązane wnioski mogą zgłosić błąd.')) {
+      this.appService.deleteResource(id).subscribe({
+        next: () => {
+          this.showToast('🗑️ Usunięto zasób.');
+          this.loadResources();
+        },
+        error: () => this.showToast('❌ Błąd: Zasób może być w użyciu.', 'error')
+      });
+    }
   }
 
   nextPage() { if (this.currentPage < this.totalPages - 1) { this.currentPage++; this.loadData(); } }

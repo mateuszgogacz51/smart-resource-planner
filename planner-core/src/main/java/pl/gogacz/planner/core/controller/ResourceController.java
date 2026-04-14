@@ -1,5 +1,7 @@
 package pl.gogacz.planner.core.controller;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.gogacz.planner.core.model.Resource;
 import pl.gogacz.planner.core.model.ResourceStatus;
@@ -20,5 +22,23 @@ public class ResourceController {
     @GetMapping("/available")
     public List<Resource> getAvailableResources() {
         return resourceRepository.findByStatus(ResourceStatus.AVAILABLE);
+    }
+
+    // --- NOWE ENDPOINTY DLA ADMINA (MAGAZYN) ---
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Resource> createResource(@RequestBody Resource resource) {
+        // Ustawiamy status domyślny na dostępny
+        resource.setStatus(ResourceStatus.AVAILABLE);
+        Resource saved = resourceRepository.save(resource);
+        return ResponseEntity.ok(saved);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteResource(@PathVariable Long id) {
+        resourceRepository.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 }

@@ -58,12 +58,20 @@ export class ApplicationService {
     return this.http.get<any[]>('http://localhost:8080/api/admin/stats');
   }
 
-  // NOWA METODA
   getStatusStats(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/stats/statuses`);
   }
 
   getAvailableResources(): Observable<any[]> {
     return this.http.get<any[]>(`${this.resourceUrl}/available`);
+  }
+
+  // --- NOWE METODY MAGAZYNU (TYLKO ADMIN) ---
+  createResource(resource: { name: string, type: string }): Observable<any> {
+    return this.http.post(this.resourceUrl, resource);
+  }
+
+  deleteResource(id: number): Observable<any> {
+    return this.http.delete(`${this.resourceUrl}/${id}`);
   }
 }
