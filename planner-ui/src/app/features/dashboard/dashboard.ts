@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router'; 
 import { ApplicationService } from '../../core/services/application';
 import { AuthService } from '../../core/services/auth';
-
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import Chart from 'chart.js/auto';
@@ -21,49 +20,40 @@ export class DashboardComponent implements OnInit {
   public authService = inject(AuthService); 
   private cdr = inject(ChangeDetectorRef);
 
+  // --- ZMIENNE STANU ---
   applications: any[] = [];
   userRole: string = '';
-  
   activeTab: 'applications' | 'employees' | 'admin-users' | 'admin-resources' = 'applications';
   
-  employeeStats: any[] = [];
+  allUsers: any[] = [];
   availableResources: any[] = [];
+  employeeStats: any[] = [];
+  
+  // Audyt Profile (Timeline)
+  selectedUserAudit: any = null;
+  showAuditModal: boolean = false;
 
-  // Paginacja
+  // Paginacja i Szukanie
   currentPage: number = 0;
   totalPages: number = 0;
   pageSize: number = 10;
-
-  // Nowy wniosek i komentarze
-  newApp: any = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
-  newComments: { [key: number]: string } = {};
-
-  // --- NOWE DANE DO MAGAZYNU ---
-  newResourceData = { name: '', type: 'LAPTOP' };
-
-  // Live Search
   searchTerm: string = '';
   searchSubject: Subject<string> = new Subject<string>();
-
-  // Pakiet Admina: Filtry i Liczniki
   statusFilter: string = 'ALL';
   pendingCount: number = 0;
 
+  // Formularze
+  newApp: any = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
+  newComments: { [key: number]: string } = {};
+  newResourceData = { name: '', type: 'LAPTOP' };
+
+  // Toasty i Wykresy
   toastMessage: string | null = null;
   toastType: 'success' | 'error' = 'success';
   statusChart: any;
   workloadChart: any;
 
-  showToast(message: string, type: 'success' | 'error' = 'success') {
-    this.toastMessage = message;
-    this.toastType = type;
-    setTimeout(() => {
-      this.toastMessage = null;
-      this.cdr.detectChanges();
-    }, 3000);
-    this.cdr.detectChanges();
-  }
-
+  // --- INICJALIZACJA ---
   ngOnInit() {
     this.userRole = (this.authService.getUserRole() || '').toUpperCase();
     
@@ -80,19 +70,17 @@ export class DashboardComponent implements OnInit {
     this.loadResources();
   }
 
-  onSearchInput(event: any) {
-    this.searchSubject.next(event.target.value);
+  showToast(message: string, type: 'success' | 'error' = 'success') {
+    this.toastMessage = message;
+    this.toastType = type;
+    setTimeout(() => {
+      this.toastMessage = null;
+      this.cdr.detectChanges();
+    }, 3000);
+    this.cdr.detectChanges();
   }
 
-  loadResources() {
-    this.appService.getAvailableResources().subscribe({
-      next: (data) => {
-        this.availableResources = data;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
+  // --- ŁADOWANIE DANYCH (WNIOSKI I ZASOBY) ---
   loadData() {
     const role = (this.authService.getUserRole() || '').toUpperCase();
     this.userRole = role; 
@@ -113,6 +101,68 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  loadResources() {
+    this.appService.getAvailableResources().subscribe({
+      next: (data) => {
+        this.availableResources = data;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // --- ZARZĄDZANIE KONTAMI (ADMIN) ---
+  loadUsers() {
+    this.authService.getAllUsers().subscribe({
+      next: (data) => {
+        this.allUsers = data;
+        this.cdr.detectChanges();
+      },
+      error: () => this.showToast('Błąd pobierania użytkowników', 'error')
+    });
+  }
+
+  updateUserRole(userId: number, event: any) {
+    const newRole = event.target.value;
+    this.authService.changeUserRole(userId, newRole).subscribe({
+      next: () => {
+        this.showToast('Zmieniono uprawnienia użytkownika', 'success');
+        this.loadUsers();
+      },
+      error: () => this.showToast('Nie udało się zmienić roli', 'error')
+    });
+  }
+
+  // --- AUDYT UŻYTKOWNIKA (MODAL) ---
+  openUserAudit(userId: number) {
+    this.authService.getUserFullProfile(userId).subscribe({
+      next: (data) => {
+        this.selectedUserAudit = data;
+        this.showAuditModal = true;
+        this.cdr.detectChanges();
+      },
+      error: () => this.showToast('Błąd pobierania danych audytowych', 'error')
+    });
+  }
+
+  closeAudit() {
+    this.showAuditModal = false;
+    this.selectedUserAudit = null;
+  }
+
+  // --- NAWIGACJA ZAKŁADEK ---
+  switchTab(tab: 'applications' | 'employees' | 'admin-users' | 'admin-resources') {
+    this.activeTab = tab;
+    if (tab === 'employees') {
+      this.loadEmployeeStats();
+    } else if (tab === 'applications') {
+      this.loadData();
+    } else if (tab === 'admin-users') {
+      this.loadUsers();
+    }
+    this.cdr.detectChanges();
+  }
+
+  // --- FILTROWANIE I WYSZUKIWANIE ---
   getFilteredApplications() {
     if (this.statusFilter === 'ALL') return this.applications;
     return this.applications.filter(app => app.status === this.statusFilter);
@@ -123,10 +173,80 @@ export class DashboardComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  printReport() {
-    window.print();
+  onSearchInput(event: any) {
+    this.searchSubject.next(event.target.value);
   }
 
+  // --- AKCJE WNIOSKÓW ---
+  submitApplication() {
+    this.appService.createApplication(this.newApp).subscribe({
+      next: () => {
+        this.showToast('Wniosek został wysłany!', 'success');
+        this.newApp = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
+        this.loadData();
+      },
+      error: (err: any) => this.handleError(err)
+    });
+  }
+
+  changeStatus(id: number, newStatus: string) {
+    this.appService.updateStatus(id, newStatus.toUpperCase()).subscribe({
+      next: () => { 
+        this.showToast(`Zmieniono status na: ${newStatus}`, 'success'); 
+        this.loadData(); 
+      },
+      error: (err: any) => this.handleError(err)
+    });
+  }
+
+  assignToMe(id: number) {
+    this.appService.assignApplication(id).subscribe({
+      next: () => { 
+        this.showToast('Przypisano do Ciebie', 'success'); 
+        this.loadData(); 
+      },
+      error: (err: any) => this.handleError(err)
+    });
+  }
+
+  addComment(id: number) {
+    const content = this.newComments[id];
+    if (!content) return;
+    this.appService.addComment(id, content).subscribe({
+      next: () => { 
+        this.showToast('Dodano notatkę', 'success'); 
+        this.newComments[id] = ''; 
+        this.loadData(); 
+      },
+      error: (err: any) => this.handleError(err)
+    });
+  }
+
+  // --- AKCJE MAGAZYNU ---
+  addNewResource() {
+    this.appService.createResource(this.newResourceData).subscribe({
+      next: () => {
+        this.showToast('✅ Dodano nowy zasób do magazynu!');
+        this.newResourceData.name = ''; 
+        this.loadResources(); 
+      },
+      error: () => this.showToast('❌ Błąd podczas dodawania zasobu.', 'error')
+    });
+  }
+
+  removeResource(id: number) {
+    if(confirm('Na pewno chcesz usunąć ten zasób? Powiązane wnioski mogą zgłosić błąd.')) {
+      this.appService.deleteResource(id).subscribe({
+        next: () => {
+          this.showToast('🗑️ Usunięto zasób.');
+          this.loadResources();
+        },
+        error: () => this.showToast('❌ Błąd: Zasób może być w użyciu.', 'error')
+      });
+    }
+  }
+
+  // --- WYKRESY (STATYSTYKI) ---
   renderCharts(empData: any[], statusData: any) {
     if (this.statusChart) this.statusChart.destroy();
     if (this.workloadChart) this.workloadChart.destroy();
@@ -167,10 +287,7 @@ export class DashboardComponent implements OnInit {
         options: { 
           responsive: true, 
           maintainAspectRatio: false,
-          scales: {
-            x: { grid: { display: false } },
-            y: { grid: { color: '#2A2A2A' } }
-          }
+          scales: { x: { grid: { display: false } }, y: { grid: { color: '#2A2A2A' } } }
         }
       });
     }
@@ -186,83 +303,10 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  switchTab(tab: 'applications' | 'employees' | 'admin-users' | 'admin-resources') {
-    this.activeTab = tab;
-    if (tab === 'employees') {
-      this.loadEmployeeStats();
-    } else if (tab === 'applications') {
-      this.loadData();
-    }
-    this.cdr.detectChanges();
-  }
-
-  changeStatus(id: number, newStatus: string) {
-    this.appService.updateStatus(id, newStatus.toUpperCase()).subscribe({
-      next: () => { 
-        this.showToast(`Zmieniono status na: ${newStatus}`, 'success'); 
-        this.loadData(); 
-      },
-      error: (err: any) => this.handleError(err)
-    });
-  }
-
-  assignToMe(id: number) {
-    this.appService.assignApplication(id).subscribe({
-      next: () => { this.showToast('Przypisano do Ciebie', 'success'); this.loadData(); },
-      error: (err: any) => this.handleError(err)
-    });
-  }
-
-  addComment(id: number) {
-    const content = this.newComments[id];
-    if (!content) return;
-    this.appService.addComment(id, content).subscribe({
-      next: () => { 
-        this.showToast('Dodano notatkę', 'success'); 
-        this.newComments[id] = ''; 
-        this.loadData(); 
-      },
-      error: (err: any) => this.handleError(err)
-    });
-  }
-
-  submitApplication() {
-    this.appService.createApplication(this.newApp).subscribe({
-      next: () => {
-        this.showToast('Wniosek został wysłany!', 'success');
-        this.newApp = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
-        this.loadData();
-      },
-      error: (err: any) => this.handleError(err)
-    });
-  }
-
-  // --- NOWE METODY MAGAZYNU ---
-  addNewResource() {
-    this.appService.createResource(this.newResourceData).subscribe({
-      next: () => {
-        this.showToast('✅ Dodano nowy zasób do magazynu!');
-        this.newResourceData.name = ''; 
-        this.loadResources(); 
-      },
-      error: () => this.showToast('❌ Błąd podczas dodawania zasobu.', 'error')
-    });
-  }
-
-  removeResource(id: number) {
-    if(confirm('Na pewno chcesz usunąć ten zasób? Powiązane wnioski mogą zgłosić błąd.')) {
-      this.appService.deleteResource(id).subscribe({
-        next: () => {
-          this.showToast('🗑️ Usunięto zasób.');
-          this.loadResources();
-        },
-        error: () => this.showToast('❌ Błąd: Zasób może być w użyciu.', 'error')
-      });
-    }
-  }
-
+  // --- NARZĘDZIA POMOCNICZE ---
   nextPage() { if (this.currentPage < this.totalPages - 1) { this.currentPage++; this.loadData(); } }
   prevPage() { if (this.currentPage > 0) { this.currentPage--; this.loadData(); } }
   private handleError(err: any) { this.showToast(err.error?.message || "Błąd połączenia", 'error'); }
+  printReport() { window.print(); }
   logout() { this.authService.logout(); this.router.navigate(['/login']); }
 }

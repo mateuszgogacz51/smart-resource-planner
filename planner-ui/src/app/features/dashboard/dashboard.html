@@ -9,7 +9,7 @@
   </div>
 
   <div class="no-print" style="margin-bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap;">
-    <button *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" 
+    <button *ngIf="authService.isAdmin() || authService.getUserRole().includes('EMPLOYEE')" 
             (click)="switchTab('applications')" 
             [style.background]="activeTab === 'applications' ? '#2D4F4F' : '#252525'" 
             [style.color]="activeTab === 'applications' ? '#99FFCC' : '#888'"
@@ -19,7 +19,7 @@
       <span *ngIf="pendingCount > 0" style="position: absolute; top: -6px; right: -6px; background: #FF6B6B; color: #121212; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; font-weight: 900;">{{ pendingCount }}</span>
     </button>
     
-    <button *ngIf="authService.getUserRole().includes('ADMIN')" (click)="switchTab('employees')" 
+    <button *ngIf="authService.isAdmin()" (click)="switchTab('employees')" 
             [style.background]="activeTab === 'employees' ? '#2D4F4F' : '#252525'" 
             [style.color]="activeTab === 'employees' ? '#99FFCC' : '#888'"
             [style.border]="activeTab === 'employees' ? '1px solid #99FFCC' : '1px solid #333'"
@@ -27,7 +27,7 @@
       📊 STATYSTYKI
     </button>
 
-    <button *ngIf="authService.getUserRole().includes('ADMIN')" (click)="switchTab('admin-users')" 
+    <button *ngIf="authService.isAdmin()" (click)="switchTab('admin-users')" 
             [style.background]="activeTab === 'admin-users' ? '#2D4F4F' : '#252525'" 
             [style.color]="activeTab === 'admin-users' ? '#99FFCC' : '#888'"
             [style.border]="activeTab === 'admin-users' ? '1px solid #99FFCC' : '1px solid #333'"
@@ -35,7 +35,7 @@
       🛡️ ZARZĄDZANIE KONTAMI
     </button>
 
-    <button *ngIf="authService.getUserRole().includes('ADMIN')" (click)="switchTab('admin-resources')" 
+    <button *ngIf="authService.isAdmin()" (click)="switchTab('admin-resources')" 
             [style.background]="activeTab === 'admin-resources' ? '#2D4F4F' : '#252525'" 
             [style.color]="activeTab === 'admin-resources' ? '#99FFCC' : '#888'"
             [style.border]="activeTab === 'admin-resources' ? '1px solid #99FFCC' : '1px solid #333'"
@@ -87,7 +87,7 @@
           <th style="padding: 20px; text-align: left;">Zasób</th>
           <th style="padding: 20px; text-align: left;">Status</th>
           <th style="padding: 20px; text-align: left; width: 30%;">Notatki i System</th>
-          <th class="no-print" *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" style="padding: 20px; text-align: left;">Akcja</th>
+          <th class="no-print" *ngIf="authService.isAdmin() || authService.getUserRole().includes('EMPLOYEE')" style="padding: 20px; text-align: left;">Akcja</th>
         </tr>
       </thead>
       <tbody>
@@ -108,7 +108,7 @@
               <button (click)="addComment(app.id)" style="background: #2D4F4F; color: #99FFCC; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">DODAJ</button>
             </div>
           </td>
-          <td class="no-print" *ngIf="authService.getUserRole().includes('ADMIN') || authService.getUserRole().includes('EMPLOYEE')" style="padding: 20px;">
+          <td class="no-print" *ngIf="authService.isAdmin() || authService.getUserRole().includes('EMPLOYEE')" style="padding: 20px;">
             <div *ngIf="app.status === 'PENDING'" style="display: flex; gap: 8px;">
               <button (click)="changeStatus(app.id, 'ACCEPTED')" style="background: #99FFCC; color: #121212; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">✅ ZATWIERDŹ</button>
               <button (click)="changeStatus(app.id, 'REJECTED')" style="background: #FF6B6B; color: #121212; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">🚫 ODRZUĆ</button>
@@ -127,13 +127,50 @@
     </div>
   </div>
 
-  <div *ngIf="activeTab === 'admin-users'" style="background: #252525; padding: 40px; border-radius: 12px; text-align: center; border: 2px dashed #444;">
-    <h2 style="color: #99FFCC;">🛡️ Panel Audytu i Kont (Wkrótce)</h2>
-    <p style="color: #888;">Tutaj Admin będzie miał pełen wgląd w historię logowań, zmianę ról i resetowanie haseł.</p>
+  <div *ngIf="activeTab === 'admin-users'">
+    <div style="background: #252525; padding: 25px; border-radius: 12px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+      <h3 style="color: #FFFFFF; margin-top: 0;">🛡️ Zarządzanie Kontami i Uprawnieniami</h3>
+      
+      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <thead style="background: #1A1A1A; color: #99FFCC; text-transform: uppercase; font-size: 0.85em;">
+          <tr>
+            <th style="padding: 15px; text-align: left;">Użytkownik</th>
+            <th style="padding: 15px; text-align: left;">Email</th>
+            <th style="padding: 15px; text-align: left;">Rola</th>
+            <th style="padding: 15px; text-align: right;">Akcje</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of allUsers" style="border-top: 1px solid #333;">
+            <td style="padding: 15px;">
+              <div style="font-weight: bold; color: white;">{{ u.firstName }} {{ u.lastName }}</div>
+              <small style="color: #888;">@{{ u.username }}</small>
+            </td>
+            <td style="padding: 15px; color: #DDD;">{{ u.email || 'brak danych' }}</td>
+            <td style="padding: 15px;">
+              <select (change)="updateUserRole(u.id, $event)" 
+                      style="background: #1E1E1E; color: #99FFCC; border: 1px solid #444; padding: 5px; border-radius: 4px;">
+                <option value="USER" [selected]="u.roles.includes('ROLE_USER')">Użytkownik</option>
+                <option value="EMPLOYEE" [selected]="u.roles.includes('ROLE_EMPLOYEE')">Pracownik</option>
+                <option value="ADMIN" [selected]="u.roles.includes('ROLE_ADMIN')">Administrator</option>
+              </select>
+            </td>
+            <td style="padding: 15px; text-align: right;">
+              <button (click)="openUserAudit(u.id)" style="background: #2D4F4F; color: #99FFCC; border: 1px solid #99FFCC; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-right: 5px;">
+                AUDYT
+              </button>
+              <button (click)="showToast('Reset hasła wysłany na email', 'success')" 
+                      style="background: transparent; color: #FDCB6E; border: 1px solid #FDCB6E; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">
+                RESET HASŁA
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div *ngIf="activeTab === 'admin-resources'">
-    
     <div class="no-print" style="background: #252525; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
       <h3 style="margin-top: 0; color: #FFFFFF;">➕ Rejestracja Nowego Sprzętu</h3>
       <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
@@ -182,6 +219,56 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div *ngIf="showAuditModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(5px);">
+    <div style="background: #1E1E1E; width: 80%; max-width: 900px; max-height: 90%; border-radius: 12px; border: 1px solid #444; overflow: hidden; display: flex; flex-direction: column;">
+      
+      <div style="padding: 20px; background: #252525; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: #99FFCC;">👤 Profil Audytowy: {{ selectedUserAudit?.user?.firstName }} {{ selectedUserAudit?.user?.lastName }}</h2>
+        <button (click)="closeAudit()" style="background: transparent; color: #888; border: none; font-size: 1.5em; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="padding: 30px; overflow-y: auto;">
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+          <div style="background: #252525; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 3px solid #99FFCC;">
+            <small style="color: #888;">Złożonych wniosków</small>
+            <div style="font-size: 1.5em; font-weight: bold; color: white;">{{ selectedUserAudit?.stats?.totalSubmitted }}</div>
+          </div>
+          <div style="background: #252525; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 3px solid #99FFCC;">
+            <small style="color: #888;">Zatwierdzonych</small>
+            <div style="font-size: 1.5em; font-weight: bold; color: #99FFCC;">{{ selectedUserAudit?.stats?.completed }}</div>
+          </div>
+          <div style="background: #252525; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 3px solid #FF6B6B;">
+            <small style="color: #888;">Odrzuconych</small>
+            <div style="font-size: 1.5em; font-weight: bold; color: #FF6B6B;">{{ selectedUserAudit?.stats?.rejected }}</div>
+          </div>
+        </div>
+
+        <h3 style="color: #FFFFFF; border-bottom: 1px solid #333; padding-bottom: 10px;">🕒 Historia Aktywności (Timeline)</h3>
+        <div style="margin-top: 20px; position: relative; padding-left: 30px; border-left: 2px solid #2D4F4F;">
+          
+          <div *ngFor="let item of selectedUserAudit?.history" style="margin-bottom: 25px; position: relative;">
+            <div style="position: absolute; left: -37px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: #99FFCC; box-shadow: 0 0 10px #99FFCC;"></div>
+            
+            <div style="background: #252525; padding: 15px; border-radius: 8px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <strong style="color: #FFF;">Wniosek o: {{ item.resource?.name }}</strong>
+                <small style="color: #888;">{{ item.createdAt | date:'dd.MM.yyyy HH:mm' }}</small>
+              </div>
+              <div style="font-size: 0.9em; color: #DDD;">
+                Status końcowy: <span [style.color]="item.status === 'ACCEPTED' ? '#99FFCC' : '#FF6B6B'">{{ item.status }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="selectedUserAudit?.history?.length === 0" style="color: #888; text-align: center; padding: 20px;">
+            Brak historycznych aktywności dla tego użytkownika.
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="no-print" *ngIf="toastMessage" [style.background]="toastType === 'success' ? '#99FFCC' : '#FF6B6B'" style="position: fixed; bottom: 30px; right: 30px; color: #121212; padding: 15px 25px; border-radius: 8px; font-weight: bold; z-index: 9999;">

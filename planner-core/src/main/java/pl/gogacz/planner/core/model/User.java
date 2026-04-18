@@ -28,9 +28,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    // NOWE POLE: Email
     private String email;
-
     private String firstName;
     private String lastName;
 
@@ -62,16 +60,15 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() { return true; }
 
-    // Ręczne gettery/settery
+    // Ręczne gettery i settery gwarantujące brak błędu "cannot find symbol"
     public void setUsername(String username) { this.username = username; }
     public void setPassword(String password) { this.password = password; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
-    public void setRoles(List<String> roles) { this.roles = roles; }
-    public List<String> getRoles() { return roles; }
 
-    // Ręczny getter i setter dla email
+    public List<String> getRoles() { return roles; }
+    public void setRoles(List<String> roles) { this.roles = roles; }
+
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-
 }

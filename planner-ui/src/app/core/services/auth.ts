@@ -9,6 +9,7 @@ import { jwtDecode } from 'jwt-decode';
 })
 export class AuthService {
   private apiUrl = 'http://localhost:8080/api/auth';
+  private adminUsersUrl = 'http://localhost:8080/api/admin/users'; // Centralna zmienna dla panelu Admina
 
   constructor(
     private http: HttpClient,
@@ -53,16 +54,13 @@ export class AuthService {
     }
   }
 
-  // --- ZMIANA 1: Bezpieczne pobieranie ról (Zawsze zwraca String) ---
   getUserRole(): string {
     const token = this.getToken();
     if (!token) return '';
     try {
       const decoded: any = jwtDecode(token);
       const roles = decoded.role || decoded.roles || '';
-      
-      // Jeśli Spring Boot wysłał role jako tablicę (np. ['ROLE_ADMIN', 'ROLE_USER'])
-      // zamieniamy to na jeden string, żeby dashboard.ts nie crashował przy .toUpperCase()
+
       if (Array.isArray(roles)) {
         return roles.join(',').toUpperCase();
       }
@@ -72,10 +70,23 @@ export class AuthService {
     }
   }
 
-  // --- ZMIANA 2: Pancerne sprawdzanie roli Admina ---
   isAdmin(): boolean {
     const role = this.getUserRole();
-    // Sprawdzamy, czy ciąg zawiera słowo ADMIN, niezależnie od tego, czy to ROLE_ADMIN,ROLE_USER itp.
     return role.includes('ADMIN');
+  }
+
+  // --- PANEL ADMINISTRATORA: ZARZĄDZANIE KONTAMI I AUDYT ---
+
+  getAllUsers(): Observable<any[]> {
+    return this.http.get<any[]>(this.adminUsersUrl);
+  }
+
+  changeUserRole(userId: number, newRole: string): Observable<any> {
+    return this.http.patch(`${this.adminUsersUrl}/${userId}/role?newRole=${newRole}`, {});
+  }
+
+  // Nowa funkcja audytowa (Enterprise)
+  getUserFullProfile(userId: number): Observable<any> {
+    return this.http.get<any>(`${this.adminUsersUrl}/${userId}/full-profile`);
   }
 }
