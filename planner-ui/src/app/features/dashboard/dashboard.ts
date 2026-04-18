@@ -131,6 +131,14 @@ export class DashboardComponent implements OnInit {
       error: () => this.showToast('Nie udało się zmienić roli', 'error')
     });
   }
+  resetUserPassword(userId: number) {
+    if (confirm('Czy na pewno chcesz zresetować hasło i wysłać maila do tego użytkownika?')) {
+      this.authService.resetPassword(userId).subscribe({
+        next: () => this.showToast('✅ Nowe hasło zostało wysłane na e-mail!', 'success'),
+        error: (err) => this.showToast('❌ Błąd: ' + (err.error?.message || 'Nie udało się wysłać emaila'), 'error')
+      });
+    }
+  }
 
   // --- AUDYT UŻYTKOWNIKA (MODAL) ---
   openUserAudit(userId: number) {

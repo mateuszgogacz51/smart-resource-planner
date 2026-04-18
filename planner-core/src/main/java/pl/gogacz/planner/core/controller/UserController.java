@@ -7,7 +7,8 @@ import pl.gogacz.planner.core.model.Reservation;
 import pl.gogacz.planner.core.model.User;
 import pl.gogacz.planner.core.repository.ReservationRepository;
 import pl.gogacz.planner.core.repository.UserRepository;
-
+import pl.gogacz.planner.core.service.EmailService;
+import java.util.UUID;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,10 +22,12 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
+    private final EmailService emailService;
 
-    public UserController(UserRepository userRepository, ReservationRepository reservationRepository) {
+    public UserController(UserRepository userRepository, ReservationRepository reservationRepository, EmailService emailService) {
         this.userRepository = userRepository;
         this.reservationRepository = reservationRepository;
+        this.emailService = emailService;
     }
 
     @GetMapping
@@ -71,5 +74,30 @@ public class UserController {
 
         profile.put("history", history);
         return ResponseEntity.ok(profile);
+    }
+    // 4. Reset hasła z wysyłką e-mail
+    @PostMapping("/{id}/reset-password")
+    public ResponseEntity<?> resetUserPassword(@PathVariable Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) return ResponseEntity.notFound().build();
+
+        User user = userOpt.get();
+
+        // Sprawdzamy czy ma maila
+        if (user.getEmail() == null || user.getEmail().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Użytkownik nie ma przypisanego adresu e-mail!"));
+        }
+
+        // Generujemy losowe, 8-znakowe hasło tymczasowe
+        String newTempPassword = UUID.randomUUID().toString().substring(0, 8);
+
+        // Zapisujemy nowe hasło (UWAGA: W środowisku produkcyjnym musisz tu użyć PasswordEncoder!)
+        user.setPassword(newTempPassword);
+        userRepository.save(user);
+
+        // Wysyłamy e-mail
+        emailService.sendPasswordResetEmail(user.getEmail(), newTempPassword);
+
+        return ResponseEntity.ok(Map.of("message", "Hasło zresetowane i wysłane na e-mail!"));
     }
 }

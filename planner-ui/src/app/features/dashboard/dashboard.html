@@ -159,10 +159,10 @@
               <button (click)="openUserAudit(u.id)" style="background: #2D4F4F; color: #99FFCC; border: 1px solid #99FFCC; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-right: 5px;">
                 AUDYT
               </button>
-              <button (click)="showToast('Reset hasła wysłany na email', 'success')" 
-                      style="background: transparent; color: #FDCB6E; border: 1px solid #FDCB6E; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">
-                RESET HASŁA
-              </button>
+     <button (click)="resetUserPassword(u.id)" 
+        style="background: transparent; color: #FDCB6E; border: 1px solid #FDCB6E; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8em;">
+  RESET HASŁA
+</button>
             </td>
           </tr>
         </tbody>

@@ -89,4 +89,7 @@ export class AuthService {
   getUserFullProfile(userId: number): Observable<any> {
     return this.http.get<any>(`${this.adminUsersUrl}/${userId}/full-profile`);
   }
+  resetPassword(userId: number): Observable<any> {
+    return this.http.post(`${this.adminUsersUrl}/${userId}/reset-password`, {});
+  }
 }
