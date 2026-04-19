@@ -1,5 +1,6 @@
 package pl.gogacz.planner.core.controller;
 
+import org.camunda.bpm.engine.RuntimeService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,7 @@ import pl.gogacz.planner.core.service.RuleService;
 import pl.gogacz.planner.dto.ReservationRuleContext;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,16 +32,21 @@ public class ReservationController {
     private final ResourceRepository resourceRepository;
     private final RuleService ruleService;
 
+    // 1. Dodajemy "uruchamiacz" procesów z Camundy
+    private final RuntimeService runtimeService;
+
     public ReservationController(ReservationRepository reservationRepository,
                                  CommentRepository commentRepository,
                                  AuditLogRepository auditLogRepository,
                                  ResourceRepository resourceRepository,
-                                 RuleService ruleService) {
+                                 RuleService ruleService,
+                                 RuntimeService runtimeService) { // Wstrzykujemy w konstruktorze
         this.reservationRepository = reservationRepository;
         this.commentRepository = commentRepository;
         this.auditLogRepository = auditLogRepository;
         this.resourceRepository = resourceRepository;
         this.ruleService = ruleService;
+        this.runtimeService = runtimeService;
     }
 
     @GetMapping
@@ -90,6 +97,7 @@ public class ReservationController {
         ctx.setEndTime(reservation.getEndTime());
         ruleService.validateReservation(ctx);
 
+        // Jeśli Drools odrzuci wniosek już tutaj, nie odpalamy Camundy
         if (!ctx.isValid()) {
             reservation.setStatus(ReservationStatus.REJECTED);
             Reservation saved = reservationRepository.save(reservation);
@@ -102,7 +110,19 @@ public class ReservationController {
             return saved;
         }
 
-        return reservationRepository.save(reservation);
+        // Zapisujemy poprawny wniosek
+        Reservation savedReservation = reservationRepository.save(reservation);
+
+        // === 2. PRZEKAZUJEMY KONTROLĘ DO CAMUNDY ===
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("reservationId", savedReservation.getId());
+        variables.put("resourceId", savedReservation.getResource().getId());
+
+        // Odpalamy proces
+        runtimeService.startProcessInstanceByKey("reservationProcess", variables);
+        System.out.println("🚀 Wniosek nr " + savedReservation.getId() + " uruchomił proces w Camundzie!");
+
+        return savedReservation;
     }
 
     @PatchMapping("/{id}/status")
@@ -155,7 +175,6 @@ public class ReservationController {
         return auditLogRepository.findByReservationIdOrderByTimestampDesc(id);
     }
 
-    // --- NOWY ENDPOINT DLA WYKRESÓW ---
     @GetMapping("/stats/statuses")
     public ResponseEntity<Map<String, Long>> getStatusStats() {
         Map<String, Long> stats = reservationRepository.findAll().stream()
