@@ -1,6 +1,8 @@
 package pl.gogacz.planner.core.controller;
 
 import org.camunda.bpm.engine.RuntimeService;
+import org.camunda.bpm.engine.TaskService;
+import org.camunda.bpm.engine.task.Task;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,8 +17,10 @@ import pl.gogacz.planner.core.repository.ReservationRepository;
 import pl.gogacz.planner.core.repository.ResourceRepository;
 import pl.gogacz.planner.core.service.RuleService;
 import pl.gogacz.planner.dto.ReservationRuleContext;
+import pl.gogacz.planner.core.dto.TimelineEvent;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,21 +36,24 @@ public class ReservationController {
     private final ResourceRepository resourceRepository;
     private final RuleService ruleService;
 
-    // 1. Dodajemy "uruchamiacz" procesów z Camundy
+    // 1. Serwisy Camundy
     private final RuntimeService runtimeService;
+    private final TaskService taskService;
 
     public ReservationController(ReservationRepository reservationRepository,
                                  CommentRepository commentRepository,
                                  AuditLogRepository auditLogRepository,
                                  ResourceRepository resourceRepository,
                                  RuleService ruleService,
-                                 RuntimeService runtimeService) { // Wstrzykujemy w konstruktorze
+                                 RuntimeService runtimeService,
+                                 TaskService taskService) {
         this.reservationRepository = reservationRepository;
         this.commentRepository = commentRepository;
         this.auditLogRepository = auditLogRepository;
         this.resourceRepository = resourceRepository;
         this.ruleService = ruleService;
         this.runtimeService = runtimeService;
+        this.taskService = taskService;
     }
 
     @GetMapping
@@ -113,7 +120,7 @@ public class ReservationController {
         // Zapisujemy poprawny wniosek
         Reservation savedReservation = reservationRepository.save(reservation);
 
-        // === 2. PRZEKAZUJEMY KONTROLĘ DO CAMUNDY ===
+        // === PRZEKAZUJEMY KONTROLĘ DO CAMUNDY ===
         Map<String, Object> variables = new HashMap<>();
         variables.put("reservationId", savedReservation.getId());
         variables.put("resourceId", savedReservation.getResource().getId());
@@ -125,6 +132,7 @@ public class ReservationController {
         return savedReservation;
     }
 
+    // === ZMIENIONA METODA: Pchnięcie Camundy po kliknięciu Zatwierdź/Odrzuć ===
     @PatchMapping("/{id}/status")
     public ResponseEntity<Reservation> updateStatus(
             @PathVariable Long id,
@@ -134,29 +142,121 @@ public class ReservationController {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Nie znaleziono wniosku"));
 
+        String oldStatusStr = reservation.getStatus().toString();
+        String newStatusStr = status.toUpperCase();
+
+        // 1. Zapis w naszej bazie
+        reservation.setStatus(ReservationStatus.valueOf(newStatusStr));
+        Reservation savedReservation = reservationRepository.save(reservation);
+
+        // 2. Audyt
         AuditLog log = new AuditLog();
         log.setReservationId(id);
         log.setChangedBy(auth.getName());
-        log.setOldStatus(reservation.getStatus().toString());
-        log.setNewStatus(status.toUpperCase());
+        log.setOldStatus(oldStatusStr);
+        log.setNewStatus(newStatusStr);
         auditLogRepository.save(log);
 
-        reservation.setStatus(ReservationStatus.valueOf(status.toUpperCase()));
-        return ResponseEntity.ok(reservationRepository.save(reservation));
+        // 3. CAMUNDA: Zakończenie zadania pracownika
+        if ("ACCEPTED".equals(newStatusStr) || "REJECTED".equals(newStatusStr)) {
+            Task camundaTask = taskService.createTaskQuery()
+                    .processVariableValueEquals("reservationId", id)
+                    .singleResult();
+
+            if (camundaTask != null) {
+                Map<String, Object> variables = new HashMap<>();
+                variables.put("employeeDecision", newStatusStr);
+
+                taskService.complete(camundaTask.getId(), variables);
+                System.out.println("🏁 CAMUNDA: Zakończono zadanie! Decyzja: " + newStatusStr);
+            }
+        }
+
+        return ResponseEntity.ok(savedReservation);
     }
 
     @PatchMapping("/{id}/assign")
     public ResponseEntity<Reservation> assignApplication(@PathVariable Long id, Authentication auth) {
         Reservation reservation = reservationRepository.findById(id).orElseThrow();
-        reservation.setAssignedEmployee(auth.getName());
-        return ResponseEntity.ok(reservationRepository.save(reservation));
+        String currentUser = auth.getName();
+
+        // Zapis w naszej bazie danych
+        reservation.setAssignedEmployee(currentUser);
+        Reservation savedReservation = reservationRepository.save(reservation);
+
+        // === MAGIA CAMUNDY: Zablokowanie zadania dla innych ===
+        Task camundaTask = taskService.createTaskQuery()
+                .processVariableValueEquals("reservationId", id)
+                .singleResult();
+
+        if (camundaTask != null) {
+            taskService.setAssignee(camundaTask.getId(), currentUser);
+            System.out.println("🔧 CAMUNDA: Wniosek nr " + id + " (Zadanie: " + camundaTask.getName() + ") przypisane do pracownika: " + currentUser);
+        }
+
+        return ResponseEntity.ok(savedReservation);
     }
 
     @PatchMapping("/{id}/unassign")
     public ResponseEntity<Reservation> unassignApplication(@PathVariable Long id, Authentication auth) {
         Reservation reservation = reservationRepository.findById(id).orElseThrow();
+
+        // Usunięcie pracownika z naszej bazy danych
         reservation.setAssignedEmployee(null);
-        return ResponseEntity.ok(reservationRepository.save(reservation));
+        Reservation savedReservation = reservationRepository.save(reservation);
+
+        // === MAGIA CAMUNDY: Uwolnienie zadania z powrotem do puli ===
+        Task camundaTask = taskService.createTaskQuery()
+                .processVariableValueEquals("reservationId", id)
+                .singleResult();
+
+        if (camundaTask != null) {
+            taskService.setAssignee(camundaTask.getId(), null);
+            System.out.println("🔓 CAMUNDA: Wniosek nr " + id + " został uwolniony. Czeka na chętnego!");
+        }
+
+        return ResponseEntity.ok(savedReservation);
+    }
+
+    // === METODA: Delegowanie ===
+    @PatchMapping("/{id}/reassign")
+    public ResponseEntity<Reservation> reassignApplication(
+            @PathVariable Long id,
+            @RequestParam String targetUsername,
+            Authentication auth) {
+
+        Reservation reservation = reservationRepository.findById(id).orElseThrow();
+
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().toUpperCase().contains("ADMIN"));
+
+        if (!isAdmin && !auth.getName().equals(reservation.getAssignedEmployee())) {
+            throw new RuntimeException("Nie możesz przekazać zadania, które nie należy do ciebie!");
+        }
+
+        String previousOwner = reservation.getAssignedEmployee();
+
+        reservation.setAssignedEmployee(targetUsername);
+        Reservation savedReservation = reservationRepository.save(reservation);
+
+        Task camundaTask = taskService.createTaskQuery()
+                .processVariableValueEquals("reservationId", id)
+                .singleResult();
+
+        if (camundaTask != null) {
+            taskService.setAssignee(camundaTask.getId(), targetUsername);
+        }
+
+        AuditLog log = new AuditLog();
+        log.setReservationId(id);
+        log.setChangedBy(auth.getName());
+        log.setOldStatus("Zadanie: " + previousOwner);
+        log.setNewStatus("Przekazane do: " + targetUsername);
+        auditLogRepository.save(log);
+
+        System.out.println("🔄 DELEGACJA: Użytkownik " + auth.getName() + " przekazał wniosek nr " + id + " do " + targetUsername);
+
+        return ResponseEntity.ok(savedReservation);
     }
 
     @PostMapping("/{id}/comments")
@@ -170,9 +270,36 @@ public class ReservationController {
         return ResponseEntity.ok(reservationRepository.findById(id).get());
     }
 
-    @GetMapping("/{id}/history")
-    public List<AuditLog> getHistory(@PathVariable Long id) {
-        return auditLogRepository.findByReservationIdOrderByTimestampDesc(id);
+    // === NOWA METODA: Zunifikowana Oś Czasu (Timeline) ===
+    @GetMapping("/{id}/timeline")
+    public ResponseEntity<List<TimelineEvent>> getUnifiedTimeline(@PathVariable Long id) {
+        List<TimelineEvent> timeline = new ArrayList<>();
+
+        // 1. Pobieranie historii statusów i delegacji (Audit Logs)
+        auditLogRepository.findByReservationIdOrderByTimestampDesc(id).forEach(log -> {
+            String msg = "Zmiana z [" + log.getOldStatus() + "] na [" + log.getNewStatus() + "]";
+            timeline.add(new TimelineEvent(
+                    log.getTimestamp(),
+                    log.getChangedBy(),
+                    "AUDIT",
+                    msg
+            ));
+        });
+
+        // 2. Pobieranie komentarzy i notatek
+        commentRepository.findByReservationId(id).forEach(comment -> {
+            timeline.add(new TimelineEvent(
+                    comment.getCreatedAt(),
+                    comment.getAuthor(),
+                    "COMMENT",
+                    comment.getContent()
+            ));
+        });
+
+        // 3. Sortowanie całości od najnowszego wydarzenia do najstarszego
+        timeline.sort((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()));
+
+        return ResponseEntity.ok(timeline);
     }
 
     @GetMapping("/stats/statuses")

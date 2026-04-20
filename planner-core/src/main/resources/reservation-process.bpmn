@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1i17hc2" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.44.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1i17hc2" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.44.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
   <bpmn:process id="reservationProcess" name="Proces Rezerwacji Zasobów" isExecutable="true" camunda:historyTimeToLive="30">
     <bpmn:startEvent id="StartEvent_1">
       <bpmn:outgoing>Flow_1wdnt6e</bpmn:outgoing>
@@ -13,11 +13,29 @@
     <bpmn:userTask id="Task_EmployeeAcceptance" name="Akceptacja Pracownika">
       <bpmn:incoming>Flow_10n2ezv</bpmn:incoming>
       <bpmn:outgoing>Flow_0gq0or6</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0ngep5f</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:endEvent id="Event_0lt80zc">
       <bpmn:incoming>Flow_0gq0or6</bpmn:incoming>
+      <bpmn:incoming>Flow_0l0w0zy</bpmn:incoming>
+      <bpmn:incoming>Flow_13yikl2</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_0gq0or6" sourceRef="Task_EmployeeAcceptance" targetRef="Event_0lt80zc" />
+    <bpmn:exclusiveGateway id="Gateway_0bwa1rw">
+      <bpmn:incoming>Flow_0ngep5f</bpmn:incoming>
+      <bpmn:outgoing>Flow_07u03v5</bpmn:outgoing>
+      <bpmn:outgoing>Flow_13yikl2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0ngep5f" sourceRef="Task_EmployeeAcceptance" targetRef="Gateway_0bwa1rw" />
+    <bpmn:sequenceFlow id="Flow_07u03v5" sourceRef="Gateway_0bwa1rw" targetRef="Activity_0pdfviy">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${employeeDecision == 'ACCEPTED' || employeeDecision == 'REJECTED'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:serviceTask id="Activity_0pdfviy" name="Wyślij e-mail" camunda:delegateExpression="${emailDelegate}">
+      <bpmn:incoming>Flow_07u03v5</bpmn:incoming>
+      <bpmn:outgoing>Flow_0l0w0zy</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_0l0w0zy" sourceRef="Activity_0pdfviy" targetRef="Event_0lt80zc" />
+    <bpmn:sequenceFlow id="Flow_13yikl2" sourceRef="Gateway_0bwa1rw" targetRef="Event_0lt80zc" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="reservationProcess">
@@ -33,7 +51,14 @@
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0lt80zc_di" bpmnElement="Event_0lt80zc">
-        <dc:Bounds x="182" y="382" width="36" height="36" />
+        <dc:Bounds x="182" y="432" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0bwa1rw_di" bpmnElement="Gateway_0bwa1rw" isMarkerVisible="true">
+        <dc:Bounds x="305" y="285" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_03ujbzf_di" bpmnElement="Activity_0pdfviy">
+        <dc:Bounds x="400" y="420" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_1wdnt6e_di" bpmnElement="Flow_1wdnt6e">
         <di:waypoint x="200" y="118" />
@@ -45,7 +70,26 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0gq0or6_di" bpmnElement="Flow_0gq0or6">
         <di:waypoint x="200" y="350" />
-        <di:waypoint x="200" y="382" />
+        <di:waypoint x="200" y="432" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ngep5f_di" bpmnElement="Flow_0ngep5f">
+        <di:waypoint x="250" y="310" />
+        <di:waypoint x="305" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07u03v5_di" bpmnElement="Flow_07u03v5">
+        <di:waypoint x="330" y="335" />
+        <di:waypoint x="330" y="370" />
+        <di:waypoint x="450" y="370" />
+        <di:waypoint x="450" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0l0w0zy_di" bpmnElement="Flow_0l0w0zy">
+        <di:waypoint x="400" y="450" />
+        <di:waypoint x="218" y="450" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13yikl2_di" bpmnElement="Flow_13yikl2">
+        <di:waypoint x="320" y="325" />
+        <di:waypoint x="320" y="450" />
+        <di:waypoint x="218" y="450" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
