@@ -104,7 +104,6 @@ public class ReservationController {
         ctx.setEndTime(reservation.getEndTime());
         ruleService.validateReservation(ctx);
 
-        // Jeśli Drools odrzuci wniosek już tutaj, nie odpalamy Camundy
         if (!ctx.isValid()) {
             reservation.setStatus(ReservationStatus.REJECTED);
             Reservation saved = reservationRepository.save(reservation);
@@ -117,22 +116,18 @@ public class ReservationController {
             return saved;
         }
 
-        // Zapisujemy poprawny wniosek
         Reservation savedReservation = reservationRepository.save(reservation);
 
-        // === PRZEKAZUJEMY KONTROLĘ DO CAMUNDY ===
         Map<String, Object> variables = new HashMap<>();
         variables.put("reservationId", savedReservation.getId());
         variables.put("resourceId", savedReservation.getResource().getId());
 
-        // Odpalamy proces
         runtimeService.startProcessInstanceByKey("reservationProcess", variables);
         System.out.println("🚀 Wniosek nr " + savedReservation.getId() + " uruchomił proces w Camundzie!");
 
         return savedReservation;
     }
 
-    // === ZMIENIONA METODA: Pchnięcie Camundy po kliknięciu Zatwierdź/Odrzuć ===
     @PatchMapping("/{id}/status")
     public ResponseEntity<Reservation> updateStatus(
             @PathVariable Long id,
@@ -145,11 +140,9 @@ public class ReservationController {
         String oldStatusStr = reservation.getStatus().toString();
         String newStatusStr = status.toUpperCase();
 
-        // 1. Zapis w naszej bazie
         reservation.setStatus(ReservationStatus.valueOf(newStatusStr));
         Reservation savedReservation = reservationRepository.save(reservation);
 
-        // 2. Audyt
         AuditLog log = new AuditLog();
         log.setReservationId(id);
         log.setChangedBy(auth.getName());
@@ -157,7 +150,6 @@ public class ReservationController {
         log.setNewStatus(newStatusStr);
         auditLogRepository.save(log);
 
-        // 3. CAMUNDA: Zakończenie zadania pracownika
         if ("ACCEPTED".equals(newStatusStr) || "REJECTED".equals(newStatusStr)) {
             Task camundaTask = taskService.createTaskQuery()
                     .processVariableValueEquals("reservationId", id)
@@ -180,11 +172,9 @@ public class ReservationController {
         Reservation reservation = reservationRepository.findById(id).orElseThrow();
         String currentUser = auth.getName();
 
-        // Zapis w naszej bazie danych
         reservation.setAssignedEmployee(currentUser);
         Reservation savedReservation = reservationRepository.save(reservation);
 
-        // === MAGIA CAMUNDY: Zablokowanie zadania dla innych ===
         Task camundaTask = taskService.createTaskQuery()
                 .processVariableValueEquals("reservationId", id)
                 .singleResult();
@@ -201,11 +191,9 @@ public class ReservationController {
     public ResponseEntity<Reservation> unassignApplication(@PathVariable Long id, Authentication auth) {
         Reservation reservation = reservationRepository.findById(id).orElseThrow();
 
-        // Usunięcie pracownika z naszej bazy danych
         reservation.setAssignedEmployee(null);
         Reservation savedReservation = reservationRepository.save(reservation);
 
-        // === MAGIA CAMUNDY: Uwolnienie zadania z powrotem do puli ===
         Task camundaTask = taskService.createTaskQuery()
                 .processVariableValueEquals("reservationId", id)
                 .singleResult();
@@ -218,7 +206,6 @@ public class ReservationController {
         return ResponseEntity.ok(savedReservation);
     }
 
-    // === METODA: Delegowanie ===
     @PatchMapping("/{id}/reassign")
     public ResponseEntity<Reservation> reassignApplication(
             @PathVariable Long id,
@@ -270,12 +257,10 @@ public class ReservationController {
         return ResponseEntity.ok(reservationRepository.findById(id).get());
     }
 
-    // === NOWA METODA: Zunifikowana Oś Czasu (Timeline) ===
     @GetMapping("/{id}/timeline")
     public ResponseEntity<List<TimelineEvent>> getUnifiedTimeline(@PathVariable Long id) {
         List<TimelineEvent> timeline = new ArrayList<>();
 
-        // 1. Pobieranie historii statusów i delegacji (Audit Logs)
         auditLogRepository.findByReservationIdOrderByTimestampDesc(id).forEach(log -> {
             String msg = "Zmiana z [" + log.getOldStatus() + "] na [" + log.getNewStatus() + "]";
             timeline.add(new TimelineEvent(
@@ -286,7 +271,6 @@ public class ReservationController {
             ));
         });
 
-        // 2. Pobieranie komentarzy i notatek
         commentRepository.findByReservationId(id).forEach(comment -> {
             timeline.add(new TimelineEvent(
                     comment.getCreatedAt(),
@@ -296,19 +280,34 @@ public class ReservationController {
             ));
         });
 
-        // 3. Sortowanie całości od najnowszego wydarzenia do najstarszego
         timeline.sort((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()));
 
         return ResponseEntity.ok(timeline);
     }
 
-    @GetMapping("/stats/statuses")
-    public ResponseEntity<Map<String, Long>> getStatusStats() {
-        Map<String, Long> stats = reservationRepository.findAll().stream()
+    // === NOWA METODA: Statystyki Dashboardu (zastępuje /stats/statuses) ===
+    @GetMapping("/stats/dashboard")
+    public ResponseEntity<pl.gogacz.planner.core.dto.DashboardStats> getDashboardStats(Authentication auth) {
+        // Statystyki tylko dla Admina
+        if (auth.getAuthorities().stream().noneMatch(a -> a.getAuthority().contains("ADMIN"))) {
+            return ResponseEntity.status(403).build();
+        }
+
+        List<Reservation> all = reservationRepository.findAll();
+
+        // Grupowanie statusów
+        Map<String, Long> statusMap = all.stream()
                 .collect(java.util.stream.Collectors.groupingBy(
                         r -> r.getStatus().name(),
                         java.util.stream.Collectors.counting()
                 ));
-        return ResponseEntity.ok(stats);
+
+        // Ranking pracowników z bazy
+        Map<String, Long> rankingMap = new java.util.LinkedHashMap<>();
+        reservationRepository.getEmployeeRanking().forEach(row ->
+                rankingMap.put((String) row[0], (Long) row[1])
+        );
+
+        return ResponseEntity.ok(new pl.gogacz.planner.core.dto.DashboardStats(all.size(), statusMap, rankingMap));
     }
 }

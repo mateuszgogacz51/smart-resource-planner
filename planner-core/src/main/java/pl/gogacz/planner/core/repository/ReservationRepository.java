@@ -27,4 +27,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "(:search IS NULL OR LOWER(r.resource.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(r.status) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Reservation> findByUserIdWithSearch(@Param("userId") String userId, @Param("search") String search, Pageable pageable);
+
+    // === NOWE: Zapytanie do statystyk (Ranking pracowników) ===
+    @Query("SELECT r.assignedEmployee, COUNT(r) FROM Reservation r WHERE r.assignedEmployee IS NOT NULL GROUP BY r.assignedEmployee ORDER BY COUNT(r) DESC")
+    List<Object[]> getEmployeeRanking();
 }
