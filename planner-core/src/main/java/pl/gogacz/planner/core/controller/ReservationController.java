@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -19,11 +20,13 @@ import pl.gogacz.planner.core.service.RuleService;
 import pl.gogacz.planner.dto.ReservationRuleContext;
 import pl.gogacz.planner.core.dto.TimelineEvent;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -285,28 +288,43 @@ public class ReservationController {
         return ResponseEntity.ok(timeline);
     }
 
-    // === NOWA METODA: Statystyki Dashboardu (zastępuje /stats/statuses) ===
+    // === NOWA METODA: Rozbudowane Statystyki Dashboardu ===
     @GetMapping("/stats/dashboard")
-    public ResponseEntity<pl.gogacz.planner.core.dto.DashboardStats> getDashboardStats(Authentication auth) {
-        // Statystyki tylko dla Admina
+    public ResponseEntity<pl.gogacz.planner.core.dto.DashboardStats> getDashboardStats(
+            @RequestParam(required = false, defaultValue = "WSZYSTKIE") String department,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Authentication auth) {
+
         if (auth.getAuthorities().stream().noneMatch(a -> a.getAuthority().contains("ADMIN"))) {
             return ResponseEntity.status(403).build();
         }
 
         List<Reservation> all = reservationRepository.findAll();
 
-        // Grupowanie statusów
+        // 1. Filtracja po dacie
+        if (startDate != null && endDate != null) {
+            LocalDateTime startOfDay = startDate.atStartOfDay();
+            LocalDateTime endOfDay = endDate.atTime(23, 59, 59);
+            all = all.stream()
+                    .filter(r -> !r.getCreatedAt().isBefore(startOfDay) && !r.getCreatedAt().isAfter(endOfDay))
+                    .collect(Collectors.toList());
+        }
+
+        // 2. Grupowanie statusów
         Map<String, Long> statusMap = all.stream()
-                .collect(java.util.stream.Collectors.groupingBy(
+                .collect(Collectors.groupingBy(
                         r -> r.getStatus().name(),
-                        java.util.stream.Collectors.counting()
+                        Collectors.counting()
                 ));
 
-        // Ranking pracowników z bazy
+        // 3. Ranking pracowników z bazy z uwzględnieniem działu
         Map<String, Long> rankingMap = new java.util.LinkedHashMap<>();
-        reservationRepository.getEmployeeRanking().forEach(row ->
-                rankingMap.put((String) row[0], (Long) row[1])
-        );
+        List<Object[]> rawRanking = (!"WSZYSTKIE".equals(department))
+                ? reservationRepository.getEmployeeRankingByDepartment(department)
+                : reservationRepository.getEmployeeRanking();
+
+        rawRanking.forEach(row -> rankingMap.put((String) row[0], (Long) row[1]));
 
         return ResponseEntity.ok(new pl.gogacz.planner.core.dto.DashboardStats(all.size(), statusMap, rankingMap));
     }

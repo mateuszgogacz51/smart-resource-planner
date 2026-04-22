@@ -31,4 +31,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     // === NOWE: Zapytanie do statystyk (Ranking pracowników) ===
     @Query("SELECT r.assignedEmployee, COUNT(r) FROM Reservation r WHERE r.assignedEmployee IS NOT NULL GROUP BY r.assignedEmployee ORDER BY COUNT(r) DESC")
     List<Object[]> getEmployeeRanking();
+    @Query("SELECT u.username, COUNT(r) FROM Reservation r JOIN User u ON r.assignedEmployee = u.username WHERE u.department = :dept GROUP BY u.username ORDER BY COUNT(r) DESC")
+    List<Object[]> getEmployeeRankingByDepartment(@Param("dept") String dept);
+
+
 }

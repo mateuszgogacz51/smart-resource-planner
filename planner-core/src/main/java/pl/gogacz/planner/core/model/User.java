@@ -27,7 +27,7 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     private String password;
-
+    private String department;
     private String email;
     private String firstName;
     private String lastName;
@@ -71,4 +71,6 @@ public class User implements UserDetails {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
 }

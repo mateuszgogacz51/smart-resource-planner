@@ -28,6 +28,12 @@ export class DashboardComponent implements OnInit {
   allUsers: any[] = [];
   availableResources: any[] = [];
   employeeStats: any[] = [];
+  totalReservations: number = 0; 
+  
+  // Nowe zmienne dla filtrów raportów
+  selectedDept: string = 'WSZYSTKIE';
+  filterStart: string = '';
+  filterEnd: string = '';
   
   // Audyt Profile (Timeline)
   selectedUserAudit: any = null;
@@ -131,6 +137,7 @@ export class DashboardComponent implements OnInit {
       error: () => this.showToast('Nie udało się zmienić roli', 'error')
     });
   }
+
   resetUserPassword(userId: number) {
     if (confirm('Czy na pewno chcesz zresetować hasło i wysłać maila do tego użytkownika?')) {
       this.authService.resetPassword(userId).subscribe({
@@ -255,7 +262,7 @@ export class DashboardComponent implements OnInit {
   }
 
   // --- WYKRESY (STATYSTYKI) ---
-  renderCharts(empData: any[], statusData: any) {
+  renderCharts(stats: any) {
     if (this.statusChart) this.statusChart.destroy();
     if (this.workloadChart) this.workloadChart.destroy();
 
@@ -266,9 +273,9 @@ export class DashboardComponent implements OnInit {
       this.statusChart = new Chart(ctxStatus, {
         type: 'doughnut',
         data: {
-          labels: Object.keys(statusData),
+          labels: Object.keys(stats.statusDistribution),
           datasets: [{
-            data: Object.values(statusData),
+            data: Object.values(stats.statusDistribution),
             backgroundColor: ['#FDCB6E', '#99FFCC', '#FF6B6B', '#2D4F4F'],
             borderColor: '#252525',
             borderWidth: 2
@@ -283,10 +290,10 @@ export class DashboardComponent implements OnInit {
       this.workloadChart = new Chart(ctxWorkload, {
         type: 'bar',
         data: {
-          labels: empData.map(e => e.username),
+          labels: Object.keys(stats.employeeRanking),
           datasets: [{
-            label: 'Wnioski',
-            data: empData.map(e => e.completedCount),
+            label: 'Obsłużone wnioski',
+            data: Object.values(stats.employeeRanking),
             backgroundColor: '#2D4F4F',
             hoverBackgroundColor: '#99FFCC',
             borderRadius: 4
@@ -302,12 +309,13 @@ export class DashboardComponent implements OnInit {
   }
 
   loadEmployeeStats() {
-    this.appService.getEmployeeStats().subscribe(empData => {
-      this.employeeStats = empData;
-      this.appService.getStatusStats().subscribe(statusData => {
+    this.appService.getDashboardStats(this.selectedDept, this.filterStart, this.filterEnd).subscribe({
+      next: (stats: any) => {
+        this.totalReservations = stats.totalReservations;
         this.cdr.detectChanges();
-        this.renderCharts(empData, statusData);
-      });
+        this.renderCharts(stats); 
+      },
+      error: (err: any) => this.showToast('Błąd pobierania statystyk', 'error')
     });
   }
 

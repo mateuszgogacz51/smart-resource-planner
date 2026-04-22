@@ -54,8 +54,7 @@ public class UserController {
         User user = userOpt.get();
 
         // Konwersja Long na String dla spójności z repozytorium
-        List<Reservation> history = reservationRepository.findByUserId(String.valueOf(id));
-
+        List<Reservation> history = reservationRepository.findByUserId(user.getUsername());
         Map<String, Object> profile = new HashMap<>();
         profile.put("user", user);
 

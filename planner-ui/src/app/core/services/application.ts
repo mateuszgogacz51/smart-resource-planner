@@ -74,4 +74,11 @@ export class ApplicationService {
   deleteResource(id: number): Observable<any> {
     return this.http.delete(`${this.resourceUrl}/${id}`);
   }
+getDashboardStats(department: string = 'WSZYSTKIE', startDate: string = '', endDate: string = '') {
+    let params = `?department=${department}`;
+    if (startDate) params += `&startDate=${startDate}`;
+    if (endDate) params += `&endDate=${endDate}`;
+    
+    return this.http.get<any>(`${this.apiUrl}/stats/dashboard${params}`);
+  }
 }
