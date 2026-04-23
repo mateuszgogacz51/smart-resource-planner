@@ -93,7 +93,16 @@
         <button (click)="setFilter('ACCEPTED')" [style.border-color]="statusFilter === 'ACCEPTED' ? '#99FFCC' : '#444'" style="background: #252525; color: white; border: 1px solid; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8em;">ZATWIERDZONE</button>
       </div>
       <div style="display: flex; gap: 15px; align-items: center;">
-        <input type="text" placeholder="Szukaj..." (input)="onSearchInput($event)" style="padding: 10px 15px; border-radius: 20px; width: 250px; background: #1A1A1A; color: white; border: 1px solid #444;">
+        
+        <select [(ngModel)]="appCategoryFilter" style="padding: 10px 15px; border-radius: 20px; background: #1A1A1A; color: white; border: 1px solid #444; cursor: pointer;">
+          <option value="ALL">Wszystkie Kategorie</option>
+          <option value="LAPTOP">💻 Laptopy / IT</option>
+          <option value="CAR">🚗 Pojazdy / Flota</option>
+          <option value="ROOM">🚪 Sale Konf.</option>
+          <option value="OTHER">📦 Inne</option>
+        </select>
+
+        <input type="text" placeholder="Szukaj (Sprzęt, Login)..." (input)="onSearchInput($event)" style="padding: 10px 15px; border-radius: 20px; width: 250px; background: #1A1A1A; color: white; border: 1px solid #444;">
         <button (click)="printReport()" style="background: transparent; color: #99FFCC; border: 1px solid #99FFCC; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">📄 POBIERZ PDF</button>
       </div>
     </div>
@@ -204,9 +213,22 @@
 
   <div *ngIf="activeTab === 'admin-users'">
     <div style="background: #252525; padding: 25px; border-radius: 12px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-      <h3 style="color: #FFFFFF; margin-top: 0;">🛡️ Zarządzanie Kontami i Uprawnieniami</h3>
+      <h3 style="color: #FFFFFF; margin-top: 0; margin-bottom: 20px;">🛡️ Zarządzanie Kontami i Uprawnieniami</h3>
       
-      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <div class="no-print" style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <input type="text" [(ngModel)]="userSearchTerm" placeholder="Szukaj (Imię, Nazwisko, Login)..." style="padding: 10px 15px; border-radius: 6px; width: 300px; background: #1A1A1A; color: white; border: 1px solid #444;">
+        <select [(ngModel)]="userDeptFilter" style="padding: 10px 15px; border-radius: 6px; background: #1A1A1A; color: white; border: 1px solid #444; min-width: 200px;">
+          <option value="WSZYSTKIE">Wszystkie Działy</option>
+          <option value="IT">IT / Techniczny</option>
+          <option value="HR">HR / Kadry</option>
+          <option value="MAGAZYN">Magazyn</option>
+          <option value="ADMIN">Administracja</option>
+          <option value="ZARZAD">Zarząd</option>
+          <option value="SPRZEDAZ">Sprzedaż</option>
+        </select>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse;">
         <thead style="background: #1A1A1A; color: #99FFCC; text-transform: uppercase; font-size: 0.85em;">
           <tr>
             <th style="padding: 15px; text-align: left;">Użytkownik</th>
@@ -216,7 +238,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let u of allUsers" style="border-top: 1px solid #333;">
+          <tr *ngFor="let u of filteredUsers" style="border-top: 1px solid #333;">
             <td style="padding: 15px;">
               <div style="font-weight: bold; color: white;">{{ u.firstName }} {{ u.lastName }}</div>
               <small style="color: #888;">@{{ u.username }}</small>
@@ -245,6 +267,7 @@
   </div>
 
   <div *ngIf="activeTab === 'admin-resources'">
+    
     <div class="no-print" style="background: #252525; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
       <h3 style="margin-top: 0; color: #FFFFFF;">➕ Rejestracja Nowego Sprzętu</h3>
       <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
@@ -266,6 +289,17 @@
       </div>
     </div>
 
+    <div class="no-print" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
+      <input type="text" [(ngModel)]="resourceSearchTerm" placeholder="Szukaj sprzętu po nazwie / modelu..." style="padding: 10px 15px; border-radius: 6px; width: 350px; background: #1A1A1A; color: white; border: 1px solid #444;">
+      <select [(ngModel)]="resourceCategoryFilter" style="padding: 10px 15px; border-radius: 6px; background: #1A1A1A; color: white; border: 1px solid #444; min-width: 200px;">
+        <option value="ALL">Wszystkie Kategorie</option>
+        <option value="LAPTOP">💻 Laptopy / IT</option>
+        <option value="CAR">🚗 Pojazdy / Flota</option>
+        <option value="ROOM">🚪 Sale Konferencyjne</option>
+        <option value="OTHER">📦 Inne</option>
+      </select>
+    </div>
+
     <table style="width: 100%; border-collapse: collapse; background: #252525; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
       <thead style="background: #1A1A1A; color: #99FFCC; text-transform: uppercase; font-size: 0.85em;">
         <tr>
@@ -276,7 +310,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let res of availableResources" style="border-top: 1px solid #333;">
+        <tr *ngFor="let res of filteredResourcesList" style="border-top: 1px solid #333;">
           <td style="padding: 20px; color: #888; font-weight: bold;">#{{ res.id }}</td>
           <td style="padding: 20px;">
             <div style="font-weight: bold; color: #FFFFFF; font-size: 1.1em;">{{ res.name }}</div>

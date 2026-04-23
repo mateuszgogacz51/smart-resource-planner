@@ -30,13 +30,24 @@ export class DashboardComponent implements OnInit {
   employeeStats: any[] = [];
   totalReservations: number = 0; 
   
+  // Zmienne filtrów
   selectedDept: string = 'WSZYSTKIE';
   filterStart: string = '';
   filterEnd: string = '';
   
+  userSearchTerm: string = '';
+  userDeptFilter: string = 'WSZYSTKIE';
+
+  resourceSearchTerm: string = '';
+  resourceCategoryFilter: string = 'ALL';
+  
+  appCategoryFilter: string = 'ALL'; // NOWE: Filtr kategorii dla wniosków
+
+  // Audyt Profile
   selectedUserAudit: any = null;
   showAuditModal: boolean = false;
 
+  // Paginacja i Szukanie we Wnioskach
   currentPage: number = 0;
   totalPages: number = 0;
   pageSize: number = 10;
@@ -45,11 +56,13 @@ export class DashboardComponent implements OnInit {
   statusFilter: string = 'ALL';
   pendingCount: number = 0;
 
+  // Formularze
   newApp: any = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
   selectedCategory: string = '';
   newComments: { [key: number]: string } = {};
   newResourceData = { name: '', type: 'LAPTOP' };
 
+  // Toasty i Wykresy
   toastMessage: string | null = null;
   toastType: 'success' | 'error' = 'success';
   statusChart: any;
@@ -112,7 +125,6 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // --- ZARZĄDZANIE KONTAMI (ADMIN) ---
   loadUsers() {
     this.authService.getAllUsers().subscribe({
       next: (data) => {
@@ -123,6 +135,56 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  // --- BŁYSKAWICZNE FILTRY CLIENT-SIDE ---
+  get filteredUsers() {
+    return this.allUsers.filter(u => {
+      const searchStr = `${u.firstName || ''} ${u.lastName || ''} ${u.username || ''}`.toLowerCase();
+      const matchesSearch = searchStr.includes(this.userSearchTerm.toLowerCase());
+      const matchesDept = this.userDeptFilter === 'WSZYSTKIE' || u.department === this.userDeptFilter;
+      return matchesSearch && matchesDept;
+    });
+  }
+
+  get filteredResourcesList() {
+    return this.availableResources.filter(res => {
+      const matchesSearch = (res.name || '').toLowerCase().includes(this.resourceSearchTerm.toLowerCase());
+      const matchesType = this.resourceCategoryFilter === 'ALL' || res.type === this.resourceCategoryFilter;
+      return matchesSearch && matchesType;
+    });
+  }
+
+  get filteredResourcesForNewApp() {
+    if (!this.selectedCategory) return [];
+    return this.availableResources.filter(res => res.type === this.selectedCategory);
+  }
+
+  getFilteredApplications() {
+    let filtered = this.applications;
+    
+    // 1. Filtr Statusu
+    if (this.statusFilter !== 'ALL') {
+      filtered = filtered.filter(app => app.status === this.statusFilter);
+    }
+    
+    // 2. NOWY: Filtr Kategorii (Sprzętu)
+    if (this.appCategoryFilter !== 'ALL') {
+      filtered = filtered.filter(app => app.resource?.type === this.appCategoryFilter);
+    }
+    
+    // 3. Głębokie wyszukiwanie tekstowe
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(app => 
+        (app.resource?.name || '').toLowerCase().includes(term) ||
+        (app.userId || '').toLowerCase().includes(term) ||
+        (app.assignedEmployee || '').toLowerCase().includes(term)
+      );
+    }
+    
+    return filtered;
+  }
+
+  // --- ZARZĄDZANIE KONTAMI I AUDYT ---
   updateUserRole(userId: number, event: any) {
     const newRole = event.target.value;
     this.authService.changeUserRole(userId, newRole).subscribe({
@@ -143,7 +205,6 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // --- EDYCJA UŻYTKOWNIKA ---
   showEditUserModal: boolean = false;
   editingUser: any = {};
 
@@ -168,7 +229,6 @@ export class DashboardComponent implements OnInit {
     this.editingUser = {};
   }
 
-  // --- AUDYT UŻYTKOWNIKA ---
   openUserAudit(userId: number) {
     this.authService.getUserFullProfile(userId).subscribe({
       next: (data) => {
@@ -198,11 +258,6 @@ export class DashboardComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  getFilteredApplications() {
-    if (this.statusFilter === 'ALL') return this.applications;
-    return this.applications.filter(app => app.status === this.statusFilter);
-  }
-
   setFilter(status: string) {
     this.statusFilter = status;
     this.cdr.detectChanges();
@@ -210,11 +265,6 @@ export class DashboardComponent implements OnInit {
 
   onSearchInput(event: any) {
     this.searchSubject.next(event.target.value);
-  }
-
-  get filteredResourcesForNewApp() {
-    if (!this.selectedCategory) return [];
-    return this.availableResources.filter(res => res.type === this.selectedCategory);
   }
 
   onCategoryChange() {
@@ -243,6 +293,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  // --- MODAL WYDAWANIA SPRZĘTU (FULFILLMENT) ---
   showFulfillmentModal: boolean = false;
   appToFulfill: number | null = null;
   fulfillmentSerialNumber: string = '';
@@ -319,7 +370,7 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // --- WYKRESY ---
+  // --- WYKRESY BI ---
   renderCharts(stats: any) {
     if (this.statusChart) this.statusChart.destroy();
     if (this.workloadChart) this.workloadChart.destroy();
