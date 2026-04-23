@@ -146,7 +146,6 @@
 
     <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 15px 20px; border-radius: 8px; margin-top: 15px; border: 1px solid #333;">
       <span style="color: #888; font-size: 0.9em;">Strona <strong style="color: #99FFCC;">{{ currentPage + 1 }}</strong> z <strong style="color: #FFF;">{{ totalPages || 1 }}</strong></span>
-      
       <div style="display: flex; gap: 10px;">
         <button (click)="prevPage()" [disabled]="currentPage === 0" 
                 style="background: #1A1A1A; color: #99FFCC; border: 1px solid #444; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s;"
@@ -235,6 +234,7 @@
               </select>
             </td>
             <td style="padding: 15px; text-align: right;">
+              <button (click)="openEditUser(u)" style="background: transparent; color: #3498DB; border: 1px solid #3498DB; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8em; margin-right: 5px;">✏️ EDYTUJ</button>
               <button (click)="openUserAudit(u.id)" style="background: #2D4F4F; color: #99FFCC; border: 1px solid #99FFCC; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-right: 5px; font-weight: bold;">AUDYT</button>
               <button (click)="resetUserPassword(u.id)" style="background: transparent; color: #FDCB6E; border: 1px solid #FDCB6E; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8em;">RESET HASŁA</button>
             </td>
@@ -364,6 +364,46 @@
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button (click)="closeFulfillment()" style="background: transparent; color: #888; border: 1px solid #444; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">ANULUJ</button>
           <button (click)="confirmFulfillment()" [disabled]="!fulfillmentSerialNumber" style="background: #99FFCC; color: #121212; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;" [style.opacity]="!fulfillmentSerialNumber ? '0.5' : '1'">ZATWIERDŹ I WYDAJ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showEditUserModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(5px);">
+    <div style="background: #1E1E1E; width: 90%; max-width: 500px; border-radius: 12px; border: 1px solid #3498DB; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(52, 152, 219, 0.1);">
+      
+      <div style="padding: 20px 25px; background: #252525; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; color: #3498DB;">✏️ Edycja Użytkownika</h3>
+        <button (click)="closeEditUser()" style="background: transparent; color: #888; border: none; font-size: 2em; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+
+      <div style="padding: 30px 25px; display: flex; flex-direction: column; gap: 15px;">
+        <div>
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">LOGIN (USERNAME):</label>
+          <input type="text" [(ngModel)]="editingUser.username" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">E-MAIL:</label>
+          <input type="email" [(ngModel)]="editingUser.email" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+        </div>
+        <div style="display: flex; gap: 15px;">
+          <div style="flex: 1;">
+            <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">IMIĘ:</label>
+            <input type="text" [(ngModel)]="editingUser.firstName" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+          </div>
+          <div style="flex: 1;">
+            <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">NAZWISKO:</label>
+            <input type="text" [(ngModel)]="editingUser.lastName" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">DZIAŁ (DEPARTMENT):</label>
+          <input type="text" [(ngModel)]="editingUser.department" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+          <button (click)="closeEditUser()" style="background: transparent; color: #888; border: 1px solid #444; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">ANULUJ</button>
+          <button (click)="saveUserEdit()" style="background: #3498DB; color: #FFF; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">ZAPISZ ZMIANY</button>
         </div>
       </div>
     </div>

@@ -30,16 +30,13 @@ export class DashboardComponent implements OnInit {
   employeeStats: any[] = [];
   totalReservations: number = 0; 
   
-  // Nowe zmienne dla filtrów raportów
   selectedDept: string = 'WSZYSTKIE';
   filterStart: string = '';
   filterEnd: string = '';
   
-  // Audyt Profile (Timeline)
   selectedUserAudit: any = null;
   showAuditModal: boolean = false;
 
-  // Paginacja i Szukanie
   currentPage: number = 0;
   totalPages: number = 0;
   pageSize: number = 10;
@@ -48,13 +45,11 @@ export class DashboardComponent implements OnInit {
   statusFilter: string = 'ALL';
   pendingCount: number = 0;
 
-  // Formularze
   newApp: any = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
-  selectedCategory: string = ''; // Przechowuje wybraną kategorię
+  selectedCategory: string = '';
   newComments: { [key: number]: string } = {};
   newResourceData = { name: '', type: 'LAPTOP' };
 
-  // Toasty i Wykresy
   toastMessage: string | null = null;
   toastType: 'success' | 'error' = 'success';
   statusChart: any;
@@ -87,7 +82,7 @@ export class DashboardComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // --- ŁADOWANIE DANYCH (WNIOSKI I ZASOBY) ---
+  // --- ŁADOWANIE DANYCH ---
   loadData() {
     const role = (this.authService.getUserRole() || '').toUpperCase();
     this.userRole = role; 
@@ -148,7 +143,32 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // --- AUDYT UŻYTKOWNIKA (MODAL) ---
+  // --- EDYCJA UŻYTKOWNIKA ---
+  showEditUserModal: boolean = false;
+  editingUser: any = {};
+
+  openEditUser(user: any) {
+    this.editingUser = { ...user };
+    this.showEditUserModal = true;
+  }
+
+  saveUserEdit() {
+    this.authService.updateUserDetails(this.editingUser.id, this.editingUser).subscribe({
+      next: () => {
+        this.showToast('✅ Dane użytkownika zostały zaktualizowane!', 'success');
+        this.closeEditUser();
+        this.loadUsers(); 
+      },
+      error: () => this.showToast('❌ Błąd podczas aktualizacji danych.', 'error')
+    });
+  }
+
+  closeEditUser() {
+    this.showEditUserModal = false;
+    this.editingUser = {};
+  }
+
+  // --- AUDYT UŻYTKOWNIKA ---
   openUserAudit(userId: number) {
     this.authService.getUserFullProfile(userId).subscribe({
       next: (data) => {
@@ -178,7 +198,6 @@ export class DashboardComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // --- FILTROWANIE I WYSZUKIWANIE ---
   getFilteredApplications() {
     if (this.statusFilter === 'ALL') return this.applications;
     return this.applications.filter(app => app.status === this.statusFilter);
@@ -193,13 +212,11 @@ export class DashboardComponent implements OnInit {
     this.searchSubject.next(event.target.value);
   }
 
-  // Zwraca tylko zasoby pasujące do wybranej kategorii
   get filteredResourcesForNewApp() {
     if (!this.selectedCategory) return [];
     return this.availableResources.filter(res => res.type === this.selectedCategory);
   }
 
-  // Czyści wybrany sprzęt, gdy użytkownik zmieni zdanie i kliknie inną kategorię
   onCategoryChange() {
     this.newApp.resourceId = null; 
   }
@@ -226,36 +243,29 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // --- ZMIENNE DO MODALA WYDAWANIA SPRZĘTU ---
   showFulfillmentModal: boolean = false;
   appToFulfill: number | null = null;
   fulfillmentSerialNumber: string = '';
 
-  // 1. Otwiera modal zamiast od razu akceptować
   openFulfillment(appId: number) {
     this.appToFulfill = appId;
     this.fulfillmentSerialNumber = '';
     this.showFulfillmentModal = true;
   }
 
-  // 2. Potwierdza wydanie sprzętu z magazynu
   confirmFulfillment() {
     if (this.appToFulfill) {
-      // Akceptujemy wniosek
       this.changeStatus(this.appToFulfill, 'ACCEPTED');
-      
-      // Dodajemy twardy wpis systemowy o wydanym numerze seryjnym
       if (this.fulfillmentSerialNumber) {
         const officialNote = `[MAGAZYN - WYDANO SPRZĘT] Przypisany numer inwentarzowy / S/N: ${this.fulfillmentSerialNumber}`;
         this.appService.addComment(this.appToFulfill, officialNote).subscribe(() => {
-          this.loadData(); // <-- NAPRAWIONE ODŚWIEŻANIE
+          this.loadData();
         });
       }
     }
     this.closeFulfillment();
   }
 
-  // 3. Zamyka modal
   closeFulfillment() {
     this.showFulfillmentModal = false;
     this.appToFulfill = null;
@@ -309,7 +319,7 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // --- WYKRESY (STATYSTYKI) ---
+  // --- WYKRESY ---
   renderCharts(stats: any) {
     if (this.statusChart) this.statusChart.destroy();
     if (this.workloadChart) this.workloadChart.destroy();

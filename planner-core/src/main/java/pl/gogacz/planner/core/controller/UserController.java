@@ -53,7 +53,6 @@ public class UserController {
         if (userOpt.isEmpty()) return ResponseEntity.notFound().build();
         User user = userOpt.get();
 
-        // Konwersja Long na String dla spójności z repozytorium
         List<Reservation> history = reservationRepository.findByUserId(user.getUsername());
         Map<String, Object> profile = new HashMap<>();
         profile.put("user", user);
@@ -74,7 +73,7 @@ public class UserController {
         profile.put("history", history);
         return ResponseEntity.ok(profile);
     }
-    // 4. Reset hasła z wysyłką e-mail
+
     @PostMapping("/{id}/reset-password")
     public ResponseEntity<?> resetUserPassword(@PathVariable Long id) {
         Optional<User> userOpt = userRepository.findById(id);
@@ -82,21 +81,52 @@ public class UserController {
 
         User user = userOpt.get();
 
-        // Sprawdzamy czy ma maila
         if (user.getEmail() == null || user.getEmail().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Użytkownik nie ma przypisanego adresu e-mail!"));
         }
 
-        // Generujemy losowe, 8-znakowe hasło tymczasowe
         String newTempPassword = UUID.randomUUID().toString().substring(0, 8);
-
-        // Zapisujemy nowe hasło (UWAGA: W środowisku produkcyjnym musisz tu użyć PasswordEncoder!)
         user.setPassword(newTempPassword);
         userRepository.save(user);
 
-        // Wysyłamy e-mail
         emailService.sendPasswordResetEmail(user.getEmail(), newTempPassword);
 
         return ResponseEntity.ok(Map.of("message", "Hasło zresetowane i wysłane na e-mail!"));
+    }
+
+    // --- NOWY ENDPOINT DO EDYCJI ---
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUserDetails(@PathVariable Long id, @RequestBody UpdateUserDto dto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika"));
+
+        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setDepartment(dto.getDepartment());
+
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Zaktualizowano dane użytkownika"));
+    }
+
+    // --- KLASA POMOCNICZA DTO ---
+    public static class UpdateUserDto {
+        private String username;
+        private String email;
+        private String firstName;
+        private String lastName;
+        private String department;
+
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getFirstName() { return firstName; }
+        public void setFirstName(String firstName) { this.firstName = firstName; }
+        public String getLastName() { return lastName; }
+        public void setLastName(String lastName) { this.lastName = lastName; }
+        public String getDepartment() { return department; }
+        public void setDepartment(String department) { this.department = department; }
     }
 }

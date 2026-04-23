@@ -9,7 +9,7 @@ import { jwtDecode } from 'jwt-decode';
 })
 export class AuthService {
   private apiUrl = 'http://localhost:8080/api/auth';
-  private adminUsersUrl = 'http://localhost:8080/api/admin/users'; // Centralna zmienna dla panelu Admina
+  private adminUsersUrl = 'http://localhost:8080/api/admin/users';
 
   constructor(
     private http: HttpClient,
@@ -75,8 +75,6 @@ export class AuthService {
     return role.includes('ADMIN');
   }
 
-  // --- PANEL ADMINISTRATORA: ZARZĄDZANIE KONTAMI I AUDYT ---
-
   getAllUsers(): Observable<any[]> {
     return this.http.get<any[]>(this.adminUsersUrl);
   }
@@ -85,11 +83,16 @@ export class AuthService {
     return this.http.patch(`${this.adminUsersUrl}/${userId}/role?newRole=${newRole}`, {});
   }
 
-  // Nowa funkcja audytowa (Enterprise)
   getUserFullProfile(userId: number): Observable<any> {
     return this.http.get<any>(`${this.adminUsersUrl}/${userId}/full-profile`);
   }
+
   resetPassword(userId: number): Observable<any> {
     return this.http.post(`${this.adminUsersUrl}/${userId}/reset-password`, {});
+  }
+
+  // --- NOWE: Aktualizacja danych użytkownika ---
+  updateUserDetails(userId: number, data: any): Observable<any> {
+    return this.http.put(`${this.adminUsersUrl}/${userId}`, data);
   }
 }
