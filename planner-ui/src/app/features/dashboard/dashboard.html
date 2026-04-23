@@ -45,26 +45,44 @@
   </div>
 
   <div *ngIf="activeTab === 'applications'">
+    
     <div class="no-print" style="background: #252525; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
       <h3 style="margin-top: 0; color: #FFFFFF;">➕ Nowy Wniosek o Sprzęt</h3>
       <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+        
         <div style="display: flex; flex-direction: column; gap: 5px;">
-          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">WYBIERZ ZASÓB:</label>
-          <select [(ngModel)]="newApp.resourceId" style="padding: 10px; min-width: 200px; background: #1A1A1A; color: white; border: 1px solid #444;">
-            <option [ngValue]="null">-- Wybierz urządzenie --</option>
-            <option *ngFor="let res of availableResources" [value]="res.id">{{ res.name }}</option>
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">1. WYBIERZ KATEGORIĘ:</label>
+          <select [(ngModel)]="selectedCategory" (change)="onCategoryChange()" style="padding: 10px; min-width: 180px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 4px;">
+            <option value="">-- Wybierz --</option>
+            <option value="LAPTOP">💻 Laptopy / IT</option>
+            <option value="ROOM">🚪 Sale Konferencyjne</option>
+            <option value="CAR">🚗 Pojazdy / Flota</option>
+            <option value="OTHER">📦 Inne</option>
           </select>
         </div>
+
         <div style="display: flex; flex-direction: column; gap: 5px;">
-          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">DATA STARTU:</label>
-          <input type="datetime-local" [(ngModel)]="newApp.startTime" style="padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444;">
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">2. WYBIERZ MODEL/SPRZĘT:</label>
+          <select [(ngModel)]="newApp.resourceId" [disabled]="!selectedCategory" style="padding: 10px; min-width: 250px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 4px; cursor: pointer;" [style.opacity]="!selectedCategory ? '0.5' : '1'">
+            <option [ngValue]="null">-- Wybierz z listy --</option>
+            <option *ngFor="let res of filteredResourcesForNewApp" [value]="res.id">{{ res.name }}</option>
+          </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">OD:</label>
+          <input type="datetime-local" [(ngModel)]="newApp.startTime" style="padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 4px;">
         </div>
         <div style="display: flex; flex-direction: column; gap: 5px;">
-          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">DATA KOŃCA:</label>
-          <input type="datetime-local" [(ngModel)]="newApp.endTime" style="padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444;">
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">DO:</label>
+          <input type="datetime-local" [(ngModel)]="newApp.endTime" style="padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 4px;">
         </div>
+
         <button (click)="submitApplication()" [disabled]="!newApp.resourceId || !newApp.startTime || !newApp.endTime"
-                style="background: #99FFCC; color: #121212; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-weight: bold;">WYŚLIJ WNIOSEK</button>
+                style="background: #99FFCC; color: #121212; border: none; padding: 11px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;"
+                [style.opacity]="(!newApp.resourceId || !newApp.startTime || !newApp.endTime) ? '0.5' : '1'">
+          WYŚLIJ WNIOSEK
+        </button>
       </div>
     </div>
 
@@ -114,7 +132,7 @@
           </td>
           <td class="no-print" *ngIf="authService.isAdmin() || authService.getUserRole().includes('EMPLOYEE')" style="padding: 20px;">
             <div *ngIf="app.status === 'PENDING'" style="display: flex; gap: 8px;">
-              <button (click)="changeStatus(app.id, 'ACCEPTED')" style="background: #99FFCC; color: #121212; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">✅ ZATWIERDŹ</button>
+              <button (click)="openFulfillment(app.id)" style="background: #99FFCC; color: #121212; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">✅ WYDAJ SPRZĘT</button>
               <button (click)="changeStatus(app.id, 'REJECTED')" style="background: #FF6B6B; color: #121212; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">🚫 ODRZUĆ</button>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 5px;">
@@ -125,6 +143,24 @@
         </tr>
       </tbody>
     </table>
+
+    <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 15px 20px; border-radius: 8px; margin-top: 15px; border: 1px solid #333;">
+      <span style="color: #888; font-size: 0.9em;">Strona <strong style="color: #99FFCC;">{{ currentPage + 1 }}</strong> z <strong style="color: #FFF;">{{ totalPages || 1 }}</strong></span>
+      
+      <div style="display: flex; gap: 10px;">
+        <button (click)="prevPage()" [disabled]="currentPage === 0" 
+                style="background: #1A1A1A; color: #99FFCC; border: 1px solid #444; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s;"
+                [style.opacity]="currentPage === 0 ? '0.3' : '1'">
+          ⬅️ POPRZEDNIA
+        </button>
+        <button (click)="nextPage()" [disabled]="currentPage >= totalPages - 1" 
+                style="background: #1A1A1A; color: #99FFCC; border: 1px solid #444; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s;"
+                [style.opacity]="currentPage >= totalPages - 1 ? '0.3' : '1'">
+          NASTĘPNA ➡️
+        </button>
+      </div>
+    </div>
+
   </div>
 
   <div *ngIf="activeTab === 'employees'">
@@ -304,6 +340,30 @@
           <div *ngIf="!selectedUserAudit?.history || selectedUserAudit?.history?.length === 0" style="color: #888; text-align: center; padding: 40px; background: #252525; border-radius: 8px; font-style: italic;">
             Brak historycznych aktywności dla tego użytkownika w bazie danych.
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showFulfillmentModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(5px);">
+    <div style="background: #1E1E1E; width: 90%; max-width: 500px; border-radius: 12px; border: 1px solid #99FFCC; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,255,204,0.1);">
+      
+      <div style="padding: 20px 25px; background: #252525; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; color: #99FFCC;">📦 Procedura Wydania Sprzętu</h3>
+        <button (click)="closeFulfillment()" style="background: transparent; color: #888; border: none; font-size: 2em; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+
+      <div style="padding: 30px 25px;">
+        <p style="color: #CCC; margin-top: 0; margin-bottom: 20px; font-size: 0.9em; line-height: 1.5;">
+          Akceptujesz ten wniosek. Aby zachować porządek w inwentaryzacji, podaj numer seryjny (S/N) lub numer inwentarzowy sprzętu, który fizycznie przekazujesz pracownikowi.
+        </p>
+
+        <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold; display: block; margin-bottom: 8px;">NUMER SERYJNY / INWENTARZOWY (S/N):</label>
+        <input type="text" [(ngModel)]="fulfillmentSerialNumber" placeholder="np. DELL-LAT-0042" style="width: 100%; padding: 12px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; font-family: monospace; font-size: 1.1em; margin-bottom: 25px; box-sizing: border-box;">
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button (click)="closeFulfillment()" style="background: transparent; color: #888; border: 1px solid #444; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">ANULUJ</button>
+          <button (click)="confirmFulfillment()" [disabled]="!fulfillmentSerialNumber" style="background: #99FFCC; color: #121212; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;" [style.opacity]="!fulfillmentSerialNumber ? '0.5' : '1'">ZATWIERDŹ I WYDAJ</button>
         </div>
       </div>
     </div>

@@ -45,6 +45,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll() // Logowanie jest publiczne
                         .requestMatchers("/camunda/**").permitAll()
                         .requestMatchers("/error").permitAll()
+
+                        // === DODANE: ODBLOKOWANIE SWAGGER UI ===
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
                         // DODANE: Dostęp do wniosków tylko dla zalogowanych użytkowników
                         .requestMatchers("/api/applications/**").authenticated()
                         // Tylko admin może zarządzać użytkownikami

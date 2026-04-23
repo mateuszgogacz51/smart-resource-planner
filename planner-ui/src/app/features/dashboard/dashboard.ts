@@ -50,6 +50,7 @@ export class DashboardComponent implements OnInit {
 
   // Formularze
   newApp: any = { resourceId: null, startTime: '', endTime: '', status: 'PENDING' };
+  selectedCategory: string = ''; // Przechowuje wybraną kategorię
   newComments: { [key: number]: string } = {};
   newResourceData = { name: '', type: 'LAPTOP' };
 
@@ -192,6 +193,17 @@ export class DashboardComponent implements OnInit {
     this.searchSubject.next(event.target.value);
   }
 
+  // Zwraca tylko zasoby pasujące do wybranej kategorii
+  get filteredResourcesForNewApp() {
+    if (!this.selectedCategory) return [];
+    return this.availableResources.filter(res => res.type === this.selectedCategory);
+  }
+
+  // Czyści wybrany sprzęt, gdy użytkownik zmieni zdanie i kliknie inną kategorię
+  onCategoryChange() {
+    this.newApp.resourceId = null; 
+  }
+
   // --- AKCJE WNIOSKÓW ---
   submitApplication() {
     this.appService.createApplication(this.newApp).subscribe({
@@ -212,6 +224,42 @@ export class DashboardComponent implements OnInit {
       },
       error: (err: any) => this.handleError(err)
     });
+  }
+
+  // --- ZMIENNE DO MODALA WYDAWANIA SPRZĘTU ---
+  showFulfillmentModal: boolean = false;
+  appToFulfill: number | null = null;
+  fulfillmentSerialNumber: string = '';
+
+  // 1. Otwiera modal zamiast od razu akceptować
+  openFulfillment(appId: number) {
+    this.appToFulfill = appId;
+    this.fulfillmentSerialNumber = '';
+    this.showFulfillmentModal = true;
+  }
+
+  // 2. Potwierdza wydanie sprzętu z magazynu
+  confirmFulfillment() {
+    if (this.appToFulfill) {
+      // Akceptujemy wniosek
+      this.changeStatus(this.appToFulfill, 'ACCEPTED');
+      
+      // Dodajemy twardy wpis systemowy o wydanym numerze seryjnym
+      if (this.fulfillmentSerialNumber) {
+        const officialNote = `[MAGAZYN - WYDANO SPRZĘT] Przypisany numer inwentarzowy / S/N: ${this.fulfillmentSerialNumber}`;
+        this.appService.addComment(this.appToFulfill, officialNote).subscribe(() => {
+          this.loadData(); // <-- NAPRAWIONE ODŚWIEŻANIE
+        });
+      }
+    }
+    this.closeFulfillment();
+  }
+
+  // 3. Zamyka modal
+  closeFulfillment() {
+    this.showFulfillmentModal = false;
+    this.appToFulfill = null;
+    this.fulfillmentSerialNumber = '';
   }
 
   assignToMe(id: number) {
