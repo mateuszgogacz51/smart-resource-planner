@@ -1,11 +1,48 @@
 version: '3.8'
+
 services:
+  # 1. BAZA DANYCH
   db:
     image: postgres:15
-    container_name: planner_db_container
+    container_name: planner-db
     environment:
       POSTGRES_DB: planner_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: planner123
+      POSTGRES_USER: planner_admin
+      POSTGRES_PASSWORD: super_secret_password
     ports:
-      - "5434:5432"
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 2. BACKEND (Spring Boot)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: planner-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Ostateczne wymuszenie PostgreSQL!
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/planner_db
+      - SPRING_DATASOURCE_USERNAME=planner_admin
+      - SPRING_DATASOURCE_PASSWORD=super_secret_password
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.PostgreSQLDialect
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - db
+
+  # 3. FRONTEND (Angular + Nginx)
+  frontend:
+    build:
+      context: ./planner-ui
+      dockerfile: Dockerfile
+    container_name: planner-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

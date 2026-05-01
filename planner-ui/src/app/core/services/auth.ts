@@ -8,8 +8,9 @@ import { jwtDecode } from 'jwt-decode';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/auth';
-  private adminUsersUrl = 'http://localhost:8080/api/admin/users';
+  // UWAGA: Ścieżki zmienione na względne dla Dockera/Nginxa!
+  private apiUrl = '/api/auth';
+  private adminUsersUrl = '/api/admin/users';
 
   constructor(
     private http: HttpClient,
@@ -41,6 +42,10 @@ export class AuthService {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('jwt_token');
     }
+  }
+
+  isLoggedIn(): boolean {
+    return this.getToken() !== null;
   }
 
   getUsername(): string {
@@ -91,7 +96,6 @@ export class AuthService {
     return this.http.post(`${this.adminUsersUrl}/${userId}/reset-password`, {});
   }
 
-  // --- NOWE: Aktualizacja danych użytkownika ---
   updateUserDetails(userId: number, data: any): Observable<any> {
     return this.http.put(`${this.adminUsersUrl}/${userId}`, data);
   }

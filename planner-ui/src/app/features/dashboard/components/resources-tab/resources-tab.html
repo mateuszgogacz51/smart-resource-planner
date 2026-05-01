@@ -1,0 +1,58 @@
+<div>
+  <div class="no-print" style="background: #252525; padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+    <h3 style="margin-top: 0; color: #FFFFFF;">➕ Rejestracja Nowego Sprzętu</h3>
+    <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+      <div style="display: flex; flex-direction: column; gap: 5px; flex-grow: 1;">
+        <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">NAZWA / MODEL:</label>
+        <input type="text" [(ngModel)]="newResourceData.name" placeholder="np. Dell Latitude 7420" style="padding: 12px; width: 100%; background: #1A1A1A; color: white; border: 1px solid #444;">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">KATEGORIA:</label>
+        <select [(ngModel)]="newResourceData.type" style="padding: 12px; min-width: 150px; background: #1A1A1A; color: white; border: 1px solid #444;">
+          <option value="LAPTOP">💻 Laptop</option>
+          <option value="CAR">🚗 Samochód</option>
+          <option value="ROOM">🚪 Sala Konf.</option>
+          <option value="OTHER">📦 Inne</option>
+        </select>
+      </div>
+      <button (click)="addNewResource()" [disabled]="!newResourceData.name"
+              style="background: #99FFCC; color: #121212; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-weight: bold;">DODAJ DO BAZY</button>
+    </div>
+  </div>
+
+  <div class="no-print" style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
+    <input type="text" [(ngModel)]="resourceSearchTerm" placeholder="Szukaj sprzętu po nazwie / modelu..." style="padding: 10px 15px; border-radius: 6px; width: 350px; background: #1A1A1A; color: white; border: 1px solid #444;">
+    <select [(ngModel)]="resourceCategoryFilter" style="padding: 10px 15px; border-radius: 6px; background: #1A1A1A; color: white; border: 1px solid #444; min-width: 200px;">
+      <option value="ALL">Wszystkie Kategorie</option>
+      <option value="LAPTOP">💻 Laptopy / IT</option>
+      <option value="CAR">🚗 Pojazdy / Flota</option>
+      <option value="ROOM">🚪 Sale Konferencyjne</option>
+      <option value="OTHER">📦 Inne</option>
+    </select>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; background: #252525; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+    <thead style="background: #1A1A1A; color: #99FFCC; text-transform: uppercase; font-size: 0.85em;">
+      <tr>
+        <th style="padding: 20px; text-align: left; width: 10%;">ID</th>
+        <th style="padding: 20px; text-align: left;">Nazwa / Model Zasobu</th>
+        <th style="padding: 20px; text-align: left;">Status Systemowy</th>
+        <th style="padding: 20px; text-align: right;">Akcja</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let res of filteredResourcesList" style="border-top: 1px solid #333;">
+        <td style="padding: 20px; color: #888; font-weight: bold;">#{{ res.id }}</td>
+        <td style="padding: 20px;">
+          <div style="font-weight: bold; color: #FFFFFF; font-size: 1.1em;">{{ res.name }}</div>
+        </td>
+        <td style="padding: 20px;">
+          <span style="background: #2D4F4F; color: #99FFCC; padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold;">AKTYWNY W BAZIE</span>
+        </td>
+        <td style="padding: 20px; text-align: right;">
+          <button (click)="removeResource(res.id)" style="background: #FF6B6B; color: #121212; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">🗑️ USUŃ</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

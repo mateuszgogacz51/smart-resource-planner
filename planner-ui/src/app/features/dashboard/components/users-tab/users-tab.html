@@ -1,0 +1,141 @@
+<div>
+  <div style="background: #252525; padding: 25px; border-radius: 12px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+    <h3 style="color: #FFFFFF; margin-top: 0; margin-bottom: 20px;">🛡️ Zarządzanie Kontami i Uprawnieniami</h3>
+    
+    <div class="no-print" style="display: flex; gap: 15px; margin-bottom: 20px;">
+      <input type="text" [(ngModel)]="userSearchTerm" placeholder="Szukaj (Imię, Nazwisko, Login)..." style="padding: 10px 15px; border-radius: 6px; width: 300px; background: #1A1A1A; color: white; border: 1px solid #444;">
+      <select [(ngModel)]="userDeptFilter" style="padding: 10px 15px; border-radius: 6px; background: #1A1A1A; color: white; border: 1px solid #444; min-width: 200px;">
+        <option value="WSZYSTKIE">Wszystkie Działy</option>
+        <option value="IT">IT / Techniczny</option>
+        <option value="HR">HR / Kadry</option>
+        <option value="MAGAZYN">Magazyn</option>
+        <option value="ADMIN">Administracja</option>
+        <option value="ZARZAD">Zarząd</option>
+        <option value="SPRZEDAZ">Sprzedaż</option>
+      </select>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead style="background: #1A1A1A; color: #99FFCC; text-transform: uppercase; font-size: 0.85em;">
+        <tr>
+          <th style="padding: 15px; text-align: left;">Użytkownik</th>
+          <th style="padding: 15px; text-align: left;">Email / Dział</th>
+          <th style="padding: 15px; text-align: left;">Rola</th>
+          <th style="padding: 15px; text-align: right;">Akcje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of filteredUsers" style="border-top: 1px solid #333;">
+          <td style="padding: 15px;">
+            <div style="font-weight: bold; color: white;">{{ u.firstName }} {{ u.lastName }}</div>
+            <small style="color: #888;">@{{ u.username }}</small>
+          </td>
+          <td style="padding: 15px;">
+            <div style="color: #DDD; font-size: 0.9em;">{{ u.email || 'brak emaila' }}</div>
+            <span style="background: #333; color: #99FFCC; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; text-transform: uppercase;">{{ u.department || 'BRAK DZIAŁU' }}</span>
+          </td>
+          <td style="padding: 15px;">
+            <select (change)="updateUserRole(u.id, $event)" 
+                    style="background: #1E1E1E; color: #99FFCC; border: 1px solid #444; padding: 8px; border-radius: 4px; width: 100%;">
+              <option value="USER" [selected]="u.roles.includes('ROLE_USER')">Użytkownik</option>
+              <option value="EMPLOYEE" [selected]="u.roles.includes('ROLE_EMPLOYEE')">Pracownik</option>
+              <option value="ADMIN" [selected]="u.roles.includes('ROLE_ADMIN')">Administrator</option>
+            </select>
+          </td>
+          <td style="padding: 15px; text-align: right;">
+            <button (click)="openEditUser(u)" style="background: transparent; color: #3498DB; border: 1px solid #3498DB; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8em; margin-right: 5px;">✏️ EDYTUJ</button>
+            <button (click)="openUserAudit(u.id)" style="background: #2D4F4F; color: #99FFCC; border: 1px solid #99FFCC; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-right: 5px; font-weight: bold;">AUDYT</button>
+            <button (click)="resetUserPassword(u.id)" style="background: transparent; color: #FDCB6E; border: 1px solid #FDCB6E; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8em;">RESET HASŁA</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- AUDIT MODAL -->
+  <div *ngIf="showAuditModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(5px);">
+    <div style="background: #1E1E1E; width: 85%; max-width: 1000px; max-height: 90%; border-radius: 12px; border: 1px solid #444; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.7);">
+      <div style="padding: 25px; background: #252525; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: #99FFCC;">👤 Profil Audytowy: {{ selectedUserAudit?.user?.firstName }} {{ selectedUserAudit?.user?.lastName }}</h2>
+        <button (click)="closeAudit()" style="background: transparent; color: #888; border: none; font-size: 2em; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+      <div style="padding: 35px; overflow-y: auto;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 35px;">
+          <div style="background: #252525; padding: 20px; border-radius: 8px; text-align: center; border-bottom: 4px solid #99FFCC;">
+            <small style="color: #888; text-transform: uppercase; font-size: 0.75em; letter-spacing: 1px;">Złożonych wniosków</small>
+            <div style="font-size: 2em; font-weight: bold; color: white; margin-top: 5px;">{{ selectedUserAudit?.stats?.totalSubmitted || 0 }}</div>
+          </div>
+          <div style="background: #252525; padding: 20px; border-radius: 8px; text-align: center; border-bottom: 4px solid #99FFCC;">
+            <small style="color: #888; text-transform: uppercase; font-size: 0.75em; letter-spacing: 1px;">Zatwierdzonych</small>
+            <div style="font-size: 2em; font-weight: bold; color: #99FFCC; margin-top: 5px;">{{ selectedUserAudit?.stats?.completed || 0 }}</div>
+          </div>
+          <div style="background: #252525; padding: 20px; border-radius: 8px; text-align: center; border-bottom: 4px solid #FF6B6B;">
+            <small style="color: #888; text-transform: uppercase; font-size: 0.75em; letter-spacing: 1px;">Odrzuconych</small>
+            <div style="font-size: 2em; font-weight: bold; color: #FF6B6B; margin-top: 5px;">{{ selectedUserAudit?.stats?.rejected || 0 }}</div>
+          </div>
+        </div>
+        <h3 style="color: #FFFFFF; border-bottom: 1px solid #333; padding-bottom: 12px; margin-bottom: 25px;">🕒 Historia Aktywności (Timeline)</h3>
+        <div style="margin-top: 20px; position: relative; padding-left: 35px; border-left: 2px solid #2D4F4F;">
+          <div *ngFor="let item of selectedUserAudit?.history" style="margin-bottom: 30px; position: relative;">
+            <div style="position: absolute; left: -43px; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: #99FFCC; box-shadow: 0 0 10px #99FFCC; border: 3px solid #1E1E1E;"></div>
+            <div style="background: #252525; padding: 20px; border-radius: 10px; border: 1px solid #333;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+                <strong style="color: #FFF; font-size: 1.1em;">📦 Wniosek o: {{ item.resource?.name }}</strong>
+                <span style="background: #1A1A1A; color: #888; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; font-family: monospace;">{{ item.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.9em; color: #BBB;">Status końcowy:</span>
+                <span [style.background]="item.status === 'ACCEPTED' ? 'rgba(153, 255, 204, 0.1)' : 'rgba(255, 107, 107, 0.1)'"
+                      [style.color]="item.status === 'ACCEPTED' ? '#99FFCC' : '#FF6B6B'"
+                      style="padding: 2px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold; border: 1px solid currentColor;">
+                  {{ item.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="!selectedUserAudit?.history || selectedUserAudit?.history?.length === 0" style="color: #888; text-align: center; padding: 40px; background: #252525; border-radius: 8px; font-style: italic;">
+            Brak historycznych aktywności dla tego użytkownika w bazie danych.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT USER MODAL -->
+  <div *ngIf="showEditUserModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(5px);">
+    <div style="background: #1E1E1E; width: 90%; max-width: 500px; border-radius: 12px; border: 1px solid #3498DB; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(52, 152, 219, 0.1);">
+      <div style="padding: 20px 25px; background: #252525; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; color: #3498DB;">✏️ Edycja Użytkownika</h3>
+        <button (click)="closeEditUser()" style="background: transparent; color: #888; border: none; font-size: 2em; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+      <div style="padding: 30px 25px; display: flex; flex-direction: column; gap: 15px;">
+        <div>
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">LOGIN (USERNAME):</label>
+          <input type="text" [(ngModel)]="editingUser.username" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">E-MAIL:</label>
+          <input type="email" [(ngModel)]="editingUser.email" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+        </div>
+        <div style="display: flex; gap: 15px;">
+          <div style="flex: 1;">
+            <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">IMIĘ:</label>
+            <input type="text" [(ngModel)]="editingUser.firstName" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+          </div>
+          <div style="flex: 1;">
+            <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">NAZWISKO:</label>
+            <input type="text" [(ngModel)]="editingUser.lastName" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 0.8em; color: #A0A0A0; font-weight: bold;">DZIAŁ (DEPARTMENT):</label>
+          <input type="text" [(ngModel)]="editingUser.department" style="width: 100%; padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 6px; box-sizing: border-box;">
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+          <button (click)="closeEditUser()" style="background: transparent; color: #888; border: 1px solid #444; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">ANULUJ</button>
+          <button (click)="saveUserEdit()" style="background: #3498DB; color: #FFF; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">ZAPISZ ZMIANY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

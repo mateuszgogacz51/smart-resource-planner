@@ -7,8 +7,11 @@ import { Observable } from 'rxjs';
 })
 export class ApplicationService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8080/api/applications';
-  private resourceUrl = 'http://localhost:8080/api/resources';
+  
+  // UWAGA: Ścieżki zmienione na względne!
+  private apiUrl = '/api/applications';
+  private resourceUrl = '/api/resources';
+  private adminStatsUrl = '/api/admin/stats';
 
   getAllApplications(page: number = 0, size: number = 10, search?: string): Observable<any> {
     let params = new HttpParams()
@@ -55,7 +58,7 @@ export class ApplicationService {
   }
 
   getEmployeeStats(): Observable<any[]> {
-    return this.http.get<any[]>('http://localhost:8080/api/admin/stats');
+    return this.http.get<any[]>(this.adminStatsUrl);
   }
 
   getStatusStats(): Observable<any> {
@@ -66,7 +69,6 @@ export class ApplicationService {
     return this.http.get<any[]>(`${this.resourceUrl}/available`);
   }
 
-  // --- NOWE METODY MAGAZYNU (TYLKO ADMIN) ---
   createResource(resource: { name: string, type: string }): Observable<any> {
     return this.http.post(this.resourceUrl, resource);
   }
@@ -74,7 +76,8 @@ export class ApplicationService {
   deleteResource(id: number): Observable<any> {
     return this.http.delete(`${this.resourceUrl}/${id}`);
   }
-getDashboardStats(department: string = 'WSZYSTKIE', startDate: string = '', endDate: string = '') {
+
+  getDashboardStats(department: string = 'WSZYSTKIE', startDate: string = '', endDate: string = '') {
     let params = `?department=${department}`;
     if (startDate) params += `&startDate=${startDate}`;
     if (endDate) params += `&endDate=${endDate}`;

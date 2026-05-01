@@ -1,0 +1,39 @@
+<div>
+  <div class="no-print" style="background: #252525; padding: 25px; border-radius: 12px; margin-bottom: 25px; display: flex; gap: 20px; align-items: flex-end; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+    <div>
+      <label style="display: block; font-size: 0.8em; color: #888; margin-bottom: 5px; font-weight: bold;">DZIAŁ:</label>
+      <select [(ngModel)]="selectedDept" (change)="loadEmployeeStats()" style="padding: 10px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 4px; min-width: 180px;">
+        <option value="WSZYSTKIE">Wszystkie działy</option>
+        <option value="IT">IT / Techniczny</option>
+        <option value="ADMIN">Administracja</option>
+        <option value="HR">Human Resources</option>
+        <option value="MAGAZYN">Magazyn</option>
+      </select>
+    </div>
+    <div>
+      <label style="display: block; font-size: 0.8em; color: #888; margin-bottom: 5px; font-weight: bold;">OKRES OD:</label>
+      <input type="date" [(ngModel)]="filterStart" (change)="loadEmployeeStats()" style="padding: 9px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 4px;">
+    </div>
+    <div>
+      <label style="display: block; font-size: 0.8em; color: #888; margin-bottom: 5px; font-weight: bold;">OKRES DO:</label>
+      <input type="date" [(ngModel)]="filterEnd" (change)="loadEmployeeStats()" style="padding: 9px; background: #1A1A1A; color: white; border: 1px solid #444; border-radius: 4px;">
+    </div>
+    <button (click)="printReport()" style="background: #99FFCC; color: #000; border: none; padding: 11px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s;">📄 GENERUJ RAPORT PDF</button>
+  </div>
+
+  <div style="background: #2D4F4F; color: white; padding: 25px; border-radius: 12px; border-left: 6px solid #99FFCC; box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: max-content; margin-bottom: 30px;">
+    <h5 style="margin: 0; color: #A0A0A0; font-size: 1em; text-transform: uppercase; letter-spacing: 1px;">Przetworzone wnioski (wybrany filtr)</h5>
+    <h1 style="margin: 8px 0 0 0; font-size: 3.5em; color: #99FFCC; font-weight: 900;">{{ totalReservations }}</h1>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+    <div style="background: #252525; padding: 30px; border-radius: 12px; height: 400px; border: 1px solid #333;">
+      <h4 style="color: #FFF; text-align: center; margin-top: 0; margin-bottom: 20px; font-weight: bold;">📊 Rozkład Statusów</h4>
+      <div style="height: 300px;"><canvas id="statusChart"></canvas></div>
+    </div>
+    <div style="background: #252525; padding: 30px; border-radius: 12px; height: 400px; border: 1px solid #333;">
+      <h4 style="color: #FFF; text-align: center; margin-top: 0; margin-bottom: 20px; font-weight: bold;">🏆 Ranking Wydajności</h4>
+      <div style="height: 300px;"><canvas id="workloadChart"></canvas></div>
+    </div>
+  </div>
+</div>
