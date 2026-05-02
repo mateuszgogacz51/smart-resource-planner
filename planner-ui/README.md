@@ -1,4 +1,8 @@
 # PlannerUi
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.0-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)
+![Camunda](https://img.shields.io/badge/Camunda-BPMN-orange?style=for-the-badge)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.0.
 
