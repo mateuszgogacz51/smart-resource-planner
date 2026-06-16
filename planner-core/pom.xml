@@ -3,15 +3,16 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>pl.gogacz.planner</groupId>
         <artifactId>smart-resource-planner</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
+
     <artifactId>planner-core</artifactId>
 
     <dependencies>
-
         <!-- ===== MODUŁY WEWNĘTRZNE ===== -->
         <dependency>
             <groupId>pl.gogacz.planner</groupId>
@@ -45,7 +46,6 @@
         </dependency>
 
         <!-- ===== SWAGGER / OPENAPI ===== -->
-        <!-- Wersja zarządzana przez parent pom — nie podawaj jej tutaj -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -67,7 +67,6 @@
         <dependency>
             <groupId>org.camunda.spin</groupId>
             <artifactId>camunda-spin-dataformat-json-jackson</artifactId>
-            <version>1.23.0</version>
         </dependency>
 
         <!-- ===== BAZA DANYCH ===== -->
@@ -104,15 +103,6 @@
             <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
-
-        <!-- ===== LOMBOK ===== -->
-        <!-- Już w parent, ale zostawiamy dla pewności w tym module -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-
     </dependencies>
 
     <build>
