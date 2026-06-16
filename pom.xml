@@ -27,10 +27,12 @@
         <java.version>17</java.version>
         <camunda.version>7.20.0</camunda.version>
         <drools.version>8.44.0.Final</drools.version>
+        <springdoc.version>2.3.0</springdoc.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Camunda BOM -->
             <dependency>
                 <groupId>org.camunda.bpm</groupId>
                 <artifactId>camunda-bom</artifactId>
@@ -39,6 +41,7 @@
                 <type>pom</type>
             </dependency>
 
+            <!-- Drools BOM -->
             <dependency>
                 <groupId>org.drools</groupId>
                 <artifactId>drools-bom</artifactId>
@@ -47,6 +50,7 @@
                 <type>pom</type>
             </dependency>
 
+            <!-- Moduły wewnętrzne -->
             <dependency>
                 <groupId>pl.gogacz.planner</groupId>
                 <artifactId>planner-api</artifactId>
@@ -62,14 +66,45 @@
                 <artifactId>planner-workflow</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <!-- Swagger / OpenAPI -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
+        <!-- Lombok — dostępny we wszystkich modułach -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Walidacja Bean Validation (@Valid, @NotBlank itd.) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Testy — dostępne we wszystkich modułach -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
