@@ -14,10 +14,20 @@ CREATE TABLE user_roles (
     CONSTRAINT fk_user_roles FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
+-- ----------------------------------------------------
+-- TUTAJ BRAKOWAŁO TEGO: Tworzenie tabeli Zasobów
+-- ----------------------------------------------------
+CREATE TABLE resources (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    description VARCHAR(255),
+    status VARCHAR(255)
+);
+
 -- Tworzenie tabeli Rezerwacji z audytem
 CREATE TABLE reservation (
     id BIGSERIAL PRIMARY KEY,
-    resource_id BIGINT,
+    resource_id BIGINT REFERENCES resources(id), -- Zaktualizowane powiązanie
     user_id VARCHAR(255),
     start_time TIMESTAMP(6),
     end_time TIMESTAMP(6),
