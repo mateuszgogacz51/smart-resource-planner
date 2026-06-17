@@ -94,7 +94,6 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Hasło zresetowane i wysłane na e-mail!"));
     }
 
-    // --- NOWY ENDPOINT DO EDYCJI ---
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUserDetails(@PathVariable Long id, @RequestBody UpdateUserDto dto) {
         User user = userRepository.findById(id)
@@ -110,7 +109,6 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Zaktualizowano dane użytkownika"));
     }
 
-    // --- KLASA POMOCNICZA DTO ---
     public static class UpdateUserDto {
         private String username;
         private String email;

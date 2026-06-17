@@ -23,12 +23,9 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
-
-    // Dodane serwisy do rejestracji
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Zaktualizowany konstruktor
     public AuthController(AuthenticationManager authenticationManager,
                           UserDetailsService userDetailsService,
                           JwtService jwtService,
@@ -43,7 +40,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public AuthenticationResponse authenticate(@RequestBody AuthenticationRequest request) {
-        // Twoje logi diagnostyczne
         System.out.println("Próba logowania dla: " + request.username());
         System.out.println("Hasło z żądania: " + request.password());
 
@@ -62,10 +58,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Użytkownik o takiej nazwie już istnieje!");
         }
 
-        // Szyfrujemy hasło
         userRequest.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-
-        // Przypisujemy zwykłą rolę
         userRequest.setRoles(List.of(Role.ROLE_USER.name()));
 
         userRepository.save(userRequest);

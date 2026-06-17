@@ -6,6 +6,5 @@ import pl.gogacz.planner.core.model.ResourceStatus;
 import java.util.List;
 
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
-    // Zwraca tylko sprzęt, który nie jest zepsuty
     List<Resource> findByStatus(ResourceStatus status);
 }

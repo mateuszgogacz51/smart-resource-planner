@@ -1,7 +1,7 @@
 package pl.gogacz.planner.core.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable; // DODANO
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -31,8 +31,6 @@ public class AdminController {
         List<User> users = userRepository.findAll();
 
         return users.stream().map(user -> {
-            // POPRAWKA: Przekazujemy Pageable.unpaged() i wyciągamy listę przez .getContent()
-            // Dzięki temu pobieramy WSZYSTKIE rekordy do obliczenia statystyk
             List<Reservation> userReservations = reservationRepository
                     .findByUserId(user.getUsername(), Pageable.unpaged())
                     .getContent();

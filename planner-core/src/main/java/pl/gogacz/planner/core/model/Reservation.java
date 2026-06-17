@@ -19,7 +19,7 @@ public class Reservation {
 
     @ManyToOne
     @JoinColumn(name = "resource_id")
-    private Resource resource; // TO POLE TERAZ ISTNIEJE ZAMIAST resourceId
+    private Resource resource;
 
     private String userId;
     private String assignedEmployee;
@@ -45,7 +45,6 @@ public class Reservation {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    // --- POPRAWIONE GETTERY I SETTERY DLA RESOURCE ---
     public Resource getResource() { return resource; }
     public void setResource(Resource resource) { this.resource = resource; }
 

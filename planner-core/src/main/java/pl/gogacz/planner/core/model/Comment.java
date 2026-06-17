@@ -12,16 +12,16 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String author; // Pracownik, który dodał notatkę
+    private String author;
 
     @Column(columnDefinition = "TEXT")
-    private String content; // Treść notatki
+    private String content;
 
     private LocalDateTime createdAt;
 
     @ManyToOne
     @JoinColumn(name = "reservation_id")
-    @JsonIgnore // Zapobiega zapętleniu JSONa podczas wysyłania do Angulara
+    @JsonIgnore
     private Reservation reservation;
 
     public Comment() {}

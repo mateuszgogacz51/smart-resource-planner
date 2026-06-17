@@ -24,12 +24,9 @@ public class ResourceController {
         return resourceRepository.findByStatus(ResourceStatus.AVAILABLE);
     }
 
-    // --- NOWE ENDPOINTY DLA ADMINA (MAGAZYN) ---
-
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Resource> createResource(@RequestBody Resource resource) {
-        // Ustawiamy status domyślny na dostępny
         resource.setStatus(ResourceStatus.AVAILABLE);
         Resource saved = resourceRepository.save(resource);
         return ResponseEntity.ok(saved);
